@@ -33,13 +33,13 @@ export const onAuthenticate = async ({
   token: string;
 }) => {
   let cookie: string | undefined = undefined;
-  let userId: string | undefined = requestParameters.get("userId") ?? undefined;
+  let requestedUserId: string | undefined = requestParameters.get("userId") ?? undefined;
 
   // Extract cookie (fallback to request headers) and userId from token (for scenarios where
   // the cookies are not passed in the request headers)
   try {
     const parsedToken = JSON.parse(token) as TUserDetails;
-    userId = parsedToken.id;
+    requestedUserId = parsedToken.id;
     cookie = parsedToken.cookie;
   } catch (error) {
     const appError = new AppError(error, {
@@ -53,7 +53,7 @@ export const onAuthenticate = async ({
     }
   }
 
-  if (!cookie || !userId) {
+  if (!cookie || !requestedUserId) {
     const appError = new AppError("Credentials not provided", { code: "AUTH_MISSING_CREDENTIALS" });
     logger.error("Credentials not provided", appError);
     throw appError;
@@ -63,21 +63,27 @@ export const onAuthenticate = async ({
   context.cookie = cookie ?? requestParameters.get("cookie") ?? "";
   context.documentType = requestParameters.get("documentType")?.toString() as TDocumentTypes;
   context.projectId = requestParameters.get("projectId");
-  context.userId = userId;
+  context.userId = requestedUserId;
   context.workspaceSlug = requestParameters.get("workspaceSlug");
 
   return await handleAuthentication({
     cookie: context.cookie,
-    userId: context.userId,
+    requestedUserId: context.userId,
   });
 };
 
-export const handleAuthentication = async ({ cookie, userId }: { cookie: string; userId: string }) => {
+export const handleAuthentication = async ({
+  cookie,
+  requestedUserId,
+}: {
+  cookie: string;
+  requestedUserId: string;
+}) => {
   // fetch current user info
   try {
     const userService = new UserService();
     const user = await userService.currentUser(cookie);
-    if (user.id !== userId) {
+    if (requestedUserId && user.id !== requestedUserId) {
       throw new AppError("Authentication unsuccessful: User ID mismatch", { code: "AUTH_USER_MISMATCH" });
     }
 
