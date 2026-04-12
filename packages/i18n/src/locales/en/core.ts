@@ -24,6 +24,8 @@ export default {
     pro: "Pro",
     upgrade: "Upgrade",
     stickies: "Stickies",
+    chat: "Chat",
+    messaging: "Messaging",
   },
 
   auth: {

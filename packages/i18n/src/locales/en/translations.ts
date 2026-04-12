@@ -1522,6 +1522,11 @@ export default {
           },
         },
       },
+      channels: {
+        title: "Channels",
+        heading: "Channels",
+        description: "Manage workspace channels and their settings.",
+      },
       webhooks: {
         heading: "Webhooks",
         description: "Automate notifications to external services when project events occur.",
