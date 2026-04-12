@@ -31,7 +31,7 @@ def create_project_default_channel(project_id, actor_id=None):
             channel=channel,
             member_id=member_id,
             defaults={
-                "role": ROLE.ADMIN.value if str(member_id) == str(actor_id) else ROLE.MEMBER.value,
+                "role": ROLE.ADMIN.value if member_id == actor_uuid else ROLE.MEMBER.value,
                 "created_by_id": actor_uuid,
             },
         )
