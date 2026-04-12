@@ -6,3 +6,9 @@
 
 export const SIDEBAR_WIDTH = 250;
 export const EXTENDED_SIDEBAR_WIDTH = 300;
+
+export const MESSAGING_SIDEBAR_ITEM = {
+  key: "messaging",
+  label: "Messaging",
+  href: "/:workspaceSlug/messaging",
+} as const;

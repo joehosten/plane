@@ -7,8 +7,8 @@
 import { enableStaticRendering } from "mobx-react";
 // plane imports
 import { FALLBACK_LANGUAGE, LANGUAGE_STORAGE_KEY } from "@plane/i18n";
-import type { IWorkItemFilterStore } from "@plane/shared-state";
-import { WorkItemFilterStore } from "@plane/shared-state";
+import type { IChatRootStore, IWorkItemFilterStore } from "@plane/shared-state";
+import { ChatRootStore, WorkItemFilterStore } from "@plane/shared-state";
 // plane web store
 import type { IAnalyticsStore } from "@/plane-web/store/analytics.store";
 import { AnalyticsStore } from "@/plane-web/store/analytics.store";
@@ -101,6 +101,7 @@ export class CoreRootStore {
   editorAssetStore: IEditorAssetStore;
   workItemFilters: IWorkItemFilterStore;
   powerK: IPowerKStore;
+  chatRoot: IChatRootStore;
 
   constructor() {
     this.router = new RouterStore();
@@ -132,6 +133,7 @@ export class CoreRootStore {
     this.analytics = new AnalyticsStore();
     this.workItemFilters = new WorkItemFilterStore();
     this.powerK = new PowerKStore();
+    this.chatRoot = new ChatRootStore();
   }
 
   resetOnSignOut() {
@@ -165,5 +167,6 @@ export class CoreRootStore {
     this.editorAssetStore = new EditorAssetStore();
     this.workItemFilters = new WorkItemFilterStore();
     this.powerK = new PowerKStore();
+    this.chatRoot = new ChatRootStore();
   }
 }

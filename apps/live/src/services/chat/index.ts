@@ -4,7 +4,4 @@
  * See the LICENSE file for details.
  */
 
-export * from "./rich-filters";
-export * from "./work-item-filters";
-
-export * from "./chat";
+export * from "./chat-pubsub.service";
