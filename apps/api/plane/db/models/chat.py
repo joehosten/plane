@@ -52,9 +52,9 @@ class Channel(BaseModel):
         db_table = "chat_channels"
         ordering = ("name", "created_at")
         indexes = [
-            models.Index(fields=["workspace", "channel_type"], name="chat_channel_workspace_type_idx"),
+            models.Index(fields=["workspace", "channel_type"], name="chat_chan_ws_type_idx"),
             models.Index(fields=["project", "channel_type"], name="chat_channel_project_type_idx"),
-            models.Index(fields=["workspace", "is_archived"], name="chat_channel_workspace_archive_idx"),
+            models.Index(fields=["workspace", "is_archived"], name="chat_chan_ws_archive_idx"),
         ]
 
     def save(self, *args, **kwargs):
@@ -118,7 +118,7 @@ class Message(BaseModel):
         db_table = "chat_messages"
         ordering = ("created_at",)
         indexes = [
-            models.Index(fields=["channel", "created_at"], name="chat_message_channel_created_idx"),
+            models.Index(fields=["channel", "created_at"], name="chat_msg_chan_created_idx"),
             models.Index(fields=["parent"], name="chat_message_parent_idx"),
             models.Index(fields=["issue"], name="chat_message_issue_idx"),
         ]
@@ -238,7 +238,7 @@ class UserPresence(BaseModel):
                 name="chat_user_presence_unique_active",
             )
         ]
-        indexes = [models.Index(fields=["workspace", "status"], name="chat_presence_workspace_status_idx")]
+        indexes = [models.Index(fields=["workspace", "status"], name="chat_presence_ws_status_idx")]
 
     def __str__(self):
         return f"{self.user_id} <{self.workspace_id}>"

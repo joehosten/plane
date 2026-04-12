@@ -558,7 +558,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="channel",
-            index=models.Index(fields=["workspace", "channel_type"], name="chat_channel_workspace_type_idx"),
+            index=models.Index(fields=["workspace", "channel_type"], name="chat_chan_ws_type_idx"),
         ),
         migrations.AddIndex(
             model_name="channel",
@@ -566,11 +566,11 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="channel",
-            index=models.Index(fields=["workspace", "is_archived"], name="chat_channel_workspace_archive_idx"),
+            index=models.Index(fields=["workspace", "is_archived"], name="chat_chan_ws_archive_idx"),
         ),
         migrations.AddIndex(
             model_name="message",
-            index=models.Index(fields=["channel", "created_at"], name="chat_message_channel_created_idx"),
+            index=models.Index(fields=["channel", "created_at"], name="chat_msg_chan_created_idx"),
         ),
         migrations.AddIndex(
             model_name="message",
@@ -582,6 +582,6 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="userpresence",
-            index=models.Index(fields=["workspace", "status"], name="chat_presence_workspace_status_idx"),
+            index=models.Index(fields=["workspace", "status"], name="chat_presence_ws_status_idx"),
         ),
     ]
