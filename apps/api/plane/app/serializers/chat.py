@@ -12,6 +12,7 @@ from rest_framework import serializers
 # Module imports
 from .base import BaseSerializer
 from .user import UserLiteSerializer
+from plane.utils.content_validator import validate_html_content
 from plane.db.models import (
     Channel,
     ChannelMembership,
@@ -206,6 +207,12 @@ class MessageSerializer(BaseSerializer):
         channel_id = self.context.get("channel_id")
         if parent and channel_id and str(parent.channel_id) != str(channel_id):
             raise serializers.ValidationError({"parent_id": "Parent message must belong to the same channel."})
+        if "content_html" in attrs and attrs["content_html"]:
+            is_valid, _error_message, sanitized_html = validate_html_content(attrs["content_html"])
+            if not is_valid:
+                raise serializers.ValidationError({"content_html": "html content is not valid"})
+            if sanitized_html is not None:
+                attrs["content_html"] = sanitized_html
         return attrs
 
     def create(self, validated_data):

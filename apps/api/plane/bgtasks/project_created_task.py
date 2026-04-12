@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 # See the LICENSE file for details.
 
+from uuid import UUID
+
 from celery import shared_task
 
 from plane.db.models import Channel, ChannelMembership, ChannelType, Project, ProjectMember
@@ -10,6 +12,7 @@ from plane.app.permissions import ROLE
 
 @shared_task
 def create_project_default_channel(project_id, actor_id=None):
+    actor_uuid = UUID(str(actor_id)) if actor_id else None
     project = Project.objects.get(pk=project_id)
     channel, _ = Channel.objects.get_or_create(
         workspace_id=project.workspace_id,
@@ -18,7 +21,7 @@ def create_project_default_channel(project_id, actor_id=None):
         channel_type=ChannelType.PROJECT,
         defaults={
             "description": "Default project chat channel",
-            "created_by_id": actor_id,
+            "created_by_id": actor_uuid,
         },
     )
 
@@ -29,6 +32,6 @@ def create_project_default_channel(project_id, actor_id=None):
             member_id=member_id,
             defaults={
                 "role": ROLE.ADMIN.value if str(member_id) == str(actor_id) else ROLE.MEMBER.value,
-                "created_by_id": actor_id,
+                "created_by_id": actor_uuid,
             },
         )

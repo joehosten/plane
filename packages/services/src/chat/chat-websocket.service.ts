@@ -28,8 +28,7 @@ export class ChatWebSocketService {
     this.latestParams = params;
     this.shouldReconnect = true;
     const baseUrl = (LIVE_URL || window.location.origin).replace(/^http/, "ws").replace(/\/$/, "");
-    const token = encodeURIComponent(JSON.stringify({ id: params.userId, cookie: document.cookie }));
-    const query = new URLSearchParams({ workspaceSlug: params.workspaceSlug, token });
+    const query = new URLSearchParams({ workspaceSlug: params.workspaceSlug, userId: params.userId });
     if (params.projectId) query.set("projectId", params.projectId);
     this.socket = new WebSocket(`${baseUrl}/chat/${params.channelId}?${query.toString()}`);
     this.attachSocketListeners();

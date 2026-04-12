@@ -8,6 +8,14 @@ import { useState } from "react";
 import { observer } from "mobx-react";
 import { useChat } from "@/hooks/store/use-chat";
 
+const escapeHtml = (value: string) =>
+  value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+
 export const MessageComposer = observer(function MessageComposer({
   workspaceSlug,
   channelId,
@@ -26,10 +34,13 @@ export const MessageComposer = observer(function MessageComposer({
     if (parentId) {
       await chat.message.sendThreadReply(workspaceSlug, channelId, parentId, {
         content,
-        content_html: `<p>${content}</p>`,
+        content_html: `<p>${escapeHtml(content)}</p>`,
       });
     } else {
-      await chat.message.sendMessage(workspaceSlug, channelId, { content, content_html: `<p>${content}</p>` });
+      await chat.message.sendMessage(workspaceSlug, channelId, {
+        content,
+        content_html: `<p>${escapeHtml(content)}</p>`,
+      });
     }
     setValue("");
   };

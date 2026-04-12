@@ -266,10 +266,14 @@ class DMChannelEndpoint(ChatChannelAccessMixin, BaseAPIView):
                 return Response(ChannelSerializer(candidate).data, status=status.HTTP_200_OK)
 
         users = list(User.objects.filter(id__in=member_ids).order_by("display_name"))
+        display_names = [user.display_name for user in users]
+        name = ", ".join(display_names[:5])
+        if len(display_names) > 5:
+            name = f"{name} + {len(display_names) - 5} more"
         channel = Channel.objects.create(
             workspace=workspace,
             channel_type=channel_type,
-            name=", ".join([user.display_name for user in users[:5]]),
+            name=name,
             created_by=request.user,
         )
         for user in users:

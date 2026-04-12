@@ -33,7 +33,7 @@ export const onAuthenticate = async ({
   token: string;
 }) => {
   let cookie: string | undefined = undefined;
-  let userId: string | undefined = undefined;
+  let userId: string | undefined = requestParameters.get("userId") ?? undefined;
 
   // Extract cookie (fallback to request headers) and userId from token (for scenarios where
   // the cookies are not passed in the request headers)
