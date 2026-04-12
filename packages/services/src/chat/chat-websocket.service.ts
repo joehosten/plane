@@ -10,7 +10,6 @@ import type { TChatWebSocketEvent } from "@plane/types";
 type TConnectParams = {
   channelId: string;
   workspaceSlug: string;
-  userId: string;
   projectId?: string;
 };
 
@@ -28,7 +27,7 @@ export class ChatWebSocketService {
     this.latestParams = params;
     this.shouldReconnect = true;
     const baseUrl = (LIVE_URL || window.location.origin).replace(/^http/, "ws").replace(/\/$/, "");
-    const query = new URLSearchParams({ workspaceSlug: params.workspaceSlug, userId: params.userId });
+    const query = new URLSearchParams({ workspaceSlug: params.workspaceSlug });
     if (params.projectId) query.set("projectId", params.projectId);
     this.socket = new WebSocket(`${baseUrl}/chat/${params.channelId}?${query.toString()}`);
     this.attachSocketListeners();

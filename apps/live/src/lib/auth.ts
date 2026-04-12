@@ -33,7 +33,7 @@ export const onAuthenticate = async ({
   token: string;
 }) => {
   let cookie: string | undefined = undefined;
-  let userId: string | undefined = requestParameters.get("userId") ?? undefined;
+  let userId: string | undefined;
 
   // Extract cookie (fallback to request headers) and userId from token (for scenarios where
   // the cookies are not passed in the request headers)
@@ -53,7 +53,7 @@ export const onAuthenticate = async ({
     }
   }
 
-  if (!cookie || !userId) {
+  if (!cookie) {
     const appError = new AppError("Credentials not provided", { code: "AUTH_MISSING_CREDENTIALS" });
     logger.error("Credentials not provided", appError);
     throw appError;
@@ -63,21 +63,23 @@ export const onAuthenticate = async ({
   context.cookie = cookie ?? requestParameters.get("cookie") ?? "";
   context.documentType = requestParameters.get("documentType")?.toString() as TDocumentTypes;
   context.projectId = requestParameters.get("projectId");
-  context.userId = userId;
+  context.userId = userId ?? "";
   context.workspaceSlug = requestParameters.get("workspaceSlug");
 
-  return await handleAuthentication({
+  const authenticated = await handleAuthentication({
     cookie: context.cookie,
-    userId: context.userId,
+    userId: context.userId || undefined,
   });
+  context.userId = authenticated.user.id;
+  return authenticated;
 };
 
-export const handleAuthentication = async ({ cookie, userId }: { cookie: string; userId: string }) => {
+export const handleAuthentication = async ({ cookie, userId }: { cookie: string; userId?: string }) => {
   // fetch current user info
   try {
     const userService = new UserService();
     const user = await userService.currentUser(cookie);
-    if (user.id !== userId) {
+    if (userId && user.id !== userId) {
       throw new AppError("Authentication unsuccessful: User ID mismatch", { code: "AUTH_USER_MISMATCH" });
     }
 

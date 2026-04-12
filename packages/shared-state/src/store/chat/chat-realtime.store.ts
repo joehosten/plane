@@ -11,7 +11,7 @@ import type { IChatRootStore } from "./index";
 
 export interface IChatRealtimeStore {
   typingIndicators: Map<string, Set<string>>;
-  connect: (params: { channelId: string; workspaceSlug: string; userId: string; projectId?: string }) => void;
+  connect: (params: { channelId: string; workspaceSlug: string; userId?: string; projectId?: string }) => void;
   disconnect: () => void;
   sendEvent: (event: TChatWebSocketEvent) => void;
   sendTypingStart: (channelId: string, userId: string) => void;
@@ -34,7 +34,7 @@ export class ChatRealtimeStore implements IChatRealtimeStore {
     this.service.on((event) => this.handleEvent(event));
   }
 
-  connect = (params: { channelId: string; workspaceSlug: string; userId: string; projectId?: string }) => {
+  connect = (params: { channelId: string; workspaceSlug: string; userId?: string; projectId?: string }) => {
     this.service.connect(params);
     if (this.heartbeatId) window.clearInterval(this.heartbeatId);
     this.heartbeatId = window.setInterval(() => {
