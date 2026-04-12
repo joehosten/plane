@@ -238,3 +238,15 @@ from .notification.base import MarkAllReadNotificationViewSet
 from .user.base import AccountEndpoint, ProfileEndpoint, UserSessionEndpoint
 
 from .timezone.base import TimezoneEndpoint
+from .chat import (
+    ChannelMembershipViewSet,
+    ChannelPinnedViewSet,
+    ChannelReadStateEndpoint,
+    ChannelViewSet,
+    DMChannelEndpoint,
+    MessageReactionViewSet,
+    MessageSearchEndpoint,
+    MessageViewSet,
+    ThreadMessageViewSet,
+    UserPresenceEndpoint,
+)

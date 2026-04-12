@@ -90,3 +90,16 @@ from .device import Device, DeviceSession
 from .sticky import Sticky
 
 from .description import Description, DescriptionVersion
+from .chat import (
+    Channel,
+    ChannelMembership,
+    ChannelMembershipRole,
+    ChannelPinned,
+    ChannelReadState,
+    ChannelType,
+    Message,
+    MessageAttachment,
+    MessageReaction,
+    UserPresence,
+    UserPresenceStatus,
+)

@@ -27,6 +27,7 @@ urlpatterns = [
     *analytic_urls,
     *asset_urls,
     *cycle_urls,
+    *chat_urls,
     *estimate_urls,
     *external_urls,
     *intake_urls,
@@ -45,3 +46,4 @@ urlpatterns = [
     *timezone_urls,
     *exporter_urls,
 ]
+from .chat import urlpatterns as chat_urls
