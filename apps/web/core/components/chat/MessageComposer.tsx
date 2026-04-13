@@ -171,15 +171,25 @@ export const MessageComposer = observer(function MessageComposer({
   };
 
   const buildContentHtml = (text: string): string => {
-    let html = escapeHtml(text);
+    let nextText = text;
+    const mentionMarkup = new Map<string, string>();
     pendingMentions.forEach((userId) => {
       const user = getUserDetails(userId);
       if (user) {
-        html = html.replace(
-          new RegExp(`@${escapeRegExp(escapeHtml(user.display_name))}`, "g"),
+        const token = `__CHAT_MENTION_${userId}__`;
+        nextText = nextText.replace(
+          new RegExp(`@${escapeRegExp(user.display_name)}`, "g"),
+          token
+        );
+        mentionMarkup.set(
+          token,
           `<mention data-id="${escapeHtml(userId)}" data-type="user_mention">@${escapeHtml(user.display_name)}</mention>`
         );
       }
+    });
+    let html = escapeHtml(nextText);
+    mentionMarkup.forEach((markup, token) => {
+      html = html.replaceAll(token, markup);
     });
     return `<p>${html}</p>`;
   };

@@ -4,21 +4,21 @@
  * See the LICENSE file for details.
  */
 
-import { escapeHtml, sanitizeRichHTML } from "@plane/utils";
+import { escapeHtml, sanitizeHTML, sanitizeRichHTML } from "@plane/utils";
 import type { TMessage } from "@plane/types";
 
 const URL_REGEX = /(https?:\/\/[^\s<>"]+)/g;
 
 function renderMentions(html: string): string {
   return html
-    .replace(/<mention[^>]*data-id="([^"]*)"[^>]*>([^<]*)<\/mention>/g, (_match, _id, text) => {
+    .replace(/<mention[^>]*data-id="([^"]*)"[^>]*>([\s\S]*?)<\/mention>/g, (_match, _id, text) => {
       return `<span class="inline-flex items-center rounded-md bg-amber-500/15 px-1.5 py-0.5 text-amber-700 font-medium dark:text-amber-300">${escapeHtml(
-        text
+        sanitizeHTML(text)
       )}</span>`;
     })
-    .replace(/<span[^>]*data-mention-type="user_mention"[^>]*>([^<]*)<\/span>/g, (_match, text) => {
+    .replace(/<span[^>]*data-mention-type="user_mention"[^>]*>([\s\S]*?)<\/span>/g, (_match, text) => {
       return `<span class="inline-flex items-center rounded-md bg-amber-500/15 px-1.5 py-0.5 text-amber-700 font-medium dark:text-amber-300">${escapeHtml(
-        text
+        sanitizeHTML(text)
       )}</span>`;
     });
 }
