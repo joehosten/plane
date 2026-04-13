@@ -175,7 +175,7 @@ export const MessageComposer = observer(function MessageComposer({
       if (user) {
         html = html.replace(
           new RegExp(`@${escapeHtml(user.display_name)}`, "g"),
-          `<mention data-id="${userId}" data-type="user_mention">@${escapeHtml(user.display_name)}</mention>`
+          `<mention data-id="${escapeHtml(userId)}" data-type="user_mention">@${escapeHtml(user.display_name)}</mention>`
         );
       }
     });

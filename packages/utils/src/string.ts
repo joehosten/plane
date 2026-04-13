@@ -130,6 +130,16 @@ export const sanitizeHTML = (htmlString: string) => {
   return sanitizedText.trim(); // trim the string to remove leading and trailing whitespaces
 };
 
+export const sanitizeRichHTML = (htmlString: string) =>
+  sanitizeHtml(htmlString, {
+    allowedTags: ["p", "br", "strong", "em", "u", "s", "code", "pre", "blockquote", "ul", "ol", "li", "a", "span"],
+    allowedAttributes: {
+      a: ["href", "target", "rel"],
+      span: ["class"],
+    },
+    allowedSchemes: ["http", "https", "mailto"],
+  });
+
 /**
  * @description: This function will remove all the HTML tags from the string and truncate the string to the specified length
  * @param {string} html

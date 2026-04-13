@@ -4,6 +4,7 @@
  * See the LICENSE file for details.
  */
 
+import { sanitizeRichHTML } from "@plane/utils";
 import type { TMessage } from "@plane/types";
 
 const URL_REGEX = /(https?:\/\/[^\s<>"]+)/g;
@@ -46,7 +47,7 @@ export function MessageContent({ message }: { message: TMessage }) {
   const urls = message.content ? [...new Set(message.content.match(URL_REGEX) ?? [])] : [];
 
   if (message.content_html) {
-    const processedHtml = renderMentions(message.content_html);
+    const processedHtml = sanitizeRichHTML(renderMentions(message.content_html));
     return (
       <div className="flex flex-col gap-1">
         <div
