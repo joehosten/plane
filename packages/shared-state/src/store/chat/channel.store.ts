@@ -39,6 +39,12 @@ export interface IChannelStore {
     data: Partial<TChannelMembership>
   ) => Promise<TChannelMembership>;
   removeMember: (workspaceSlug: string, channelId: string, memberId: string) => Promise<void>;
+  updateMember: (
+    workspaceSlug: string,
+    channelId: string,
+    memberId: string,
+    data: Partial<TChannelMembership>
+  ) => Promise<TChannelMembership>;
   getMembers: (channelId: string) => TChannelMembership[];
   workspacePublicChannels: TChannel[];
   workspacePrivateChannels: TChannel[];
@@ -77,6 +83,7 @@ export class ChannelStore implements IChannelStore {
       fetchMembers: action,
       addMember: action,
       removeMember: action,
+      updateMember: action,
       setChannels: action,
       upsertChannel: action,
     });
@@ -195,9 +202,24 @@ export class ChannelStore implements IChannelStore {
     const existing = this.memberships.get(channelId) ?? [];
     this.memberships.set(
       channelId,
-      existing.filter((m) => m.id !== memberId)
+      existing.filter((m) => m.member !== memberId)
     );
     const channel = this.channels.get(channelId);
     if (channel) this.channels.set(channelId, { ...channel, member_count: Math.max(0, channel.member_count - 1) });
+  };
+
+  updateMember = async (
+    workspaceSlug: string,
+    channelId: string,
+    memberId: string,
+    data: Partial<TChannelMembership>
+  ) => {
+    const member = await this.service.updateMember(workspaceSlug, channelId, memberId, data);
+    const existing = this.memberships.get(channelId) ?? [];
+    this.memberships.set(
+      channelId,
+      existing.map((membership) => (membership.member === memberId ? member : membership))
+    );
+    return member;
   };
 }

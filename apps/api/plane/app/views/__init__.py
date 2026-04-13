@@ -241,6 +241,7 @@ from .timezone.base import TimezoneEndpoint
 from .chat import (
     ChannelMembershipViewSet,
     ChannelPinnedViewSet,
+    ChannelPermissionsEndpoint,
     ChannelReadStateEndpoint,
     ChannelViewSet,
     DMChannelEndpoint,

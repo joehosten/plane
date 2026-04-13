@@ -60,6 +60,23 @@ class ChatChannelAccessMixin:
             return ProjectMember.objects.filter(project_id=channel.project_id, member=user, is_active=True).exists()
         return ChannelMembership.objects.filter(channel=channel, member=user, deleted_at__isnull=True).exists()
 
+    def _permission_payload(self, channel, user):
+        is_admin = self._is_channel_admin(channel, user)
+        payload = {
+            "can_post": channel.can_post,
+            "can_create_channels": channel.can_create_channels,
+            "can_manage_members": channel.can_manage_members,
+            "current_user_can_post": is_admin or channel.can_post,
+            "current_user_can_create_channels": is_admin or channel.can_create_channels,
+            "current_user_can_manage_members": is_admin or channel.can_manage_members,
+            "can_manage_permissions": is_admin,
+        }
+        if channel.channel_type in ["DM", "GROUP_DM"]:
+            payload["current_user_can_post"] = True
+            payload["current_user_can_create_channels"] = is_admin
+            payload["current_user_can_manage_members"] = is_admin
+        return payload
+
     def _accessible_channels(self, slug, user):
         return (
             Channel.objects.filter(workspace__slug=slug)
@@ -136,7 +153,8 @@ class ChannelViewSet(ChatChannelAccessMixin, BaseViewSet):
     @allow_permission([ROLE.ADMIN, ROLE.MEMBER], level="WORKSPACE")
     def partial_update(self, request, slug, pk, project_id=None):
         channel = Channel.objects.get(pk=pk, workspace__slug=slug)
-        if not self._is_channel_admin(channel, request.user):
+        permissions = self._permission_payload(channel, request.user)
+        if not permissions["current_user_can_create_channels"]:
             return Response({"error": "You do not have permission"}, status=status.HTTP_403_FORBIDDEN)
         serializer = ChannelSerializer(channel, data=request.data, partial=True, context={"project_id": project_id})
         if not serializer.is_valid():
@@ -173,7 +191,7 @@ class ChannelMembershipViewSet(ChatChannelAccessMixin, BaseViewSet):
     @allow_permission([ROLE.ADMIN, ROLE.MEMBER], level="WORKSPACE")
     def create(self, request, slug, channel_id):
         channel = Channel.objects.get(pk=channel_id, workspace__slug=slug)
-        if not self._is_channel_admin(channel, request.user):
+        if not self._permission_payload(channel, request.user)["current_user_can_manage_members"]:
             return Response({"error": "You do not have permission"}, status=status.HTTP_403_FORBIDDEN)
         serializer = ChannelMembershipSerializer(data=request.data)
         if not serializer.is_valid():
@@ -182,9 +200,22 @@ class ChannelMembershipViewSet(ChatChannelAccessMixin, BaseViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @allow_permission([ROLE.ADMIN, ROLE.MEMBER], level="WORKSPACE")
+    def partial_update(self, request, slug, channel_id, member_id):
+        channel = Channel.objects.get(pk=channel_id, workspace__slug=slug)
+        if not self._permission_payload(channel, request.user)["current_user_can_manage_members"]:
+            return Response({"error": "You do not have permission"}, status=status.HTTP_403_FORBIDDEN)
+        membership = ChannelMembership.objects.get(channel=channel, member_id=member_id, deleted_at__isnull=True)
+        serializer = ChannelMembershipSerializer(membership, data=request.data, partial=True)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.save(updated_by=request.user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @allow_permission([ROLE.ADMIN, ROLE.MEMBER], level="WORKSPACE")
     def destroy(self, request, slug, channel_id, member_id):
         channel = Channel.objects.get(pk=channel_id, workspace__slug=slug)
-        if not self._is_channel_admin(channel, request.user) and str(request.user.id) != str(member_id):
+        can_manage_members = self._permission_payload(channel, request.user)["current_user_can_manage_members"]
+        if not can_manage_members and str(request.user.id) != str(member_id):
             return Response({"error": "You do not have permission"}, status=status.HTTP_403_FORBIDDEN)
         membership = ChannelMembership.objects.get(channel=channel, member_id=member_id, deleted_at__isnull=True)
         membership.delete()
@@ -214,6 +245,27 @@ class ChannelReadStateEndpoint(ChatChannelAccessMixin, BaseAPIView):
         read_state.last_read_at = request.data.get("last_read_at") or timezone.now()
         read_state.save(update_fields=["last_read_message", "last_read_at", "updated_at", "updated_by"])
         return Response(ChannelReadStateSerializer(read_state).data, status=status.HTTP_200_OK)
+
+
+class ChannelPermissionsEndpoint(ChatChannelAccessMixin, BaseAPIView):
+    @allow_permission([ROLE.ADMIN, ROLE.MEMBER, ROLE.GUEST], level="WORKSPACE")
+    def get(self, request, slug, channel_id):
+        channel = Channel.objects.get(pk=channel_id, workspace__slug=slug)
+        if not self._can_access_channel(channel, request.user):
+            return Response({"error": "You do not have permission"}, status=status.HTTP_403_FORBIDDEN)
+        return Response(self._permission_payload(channel, request.user), status=status.HTTP_200_OK)
+
+    @allow_permission([ROLE.ADMIN, ROLE.MEMBER], level="WORKSPACE")
+    def patch(self, request, slug, channel_id):
+        channel = Channel.objects.get(pk=channel_id, workspace__slug=slug)
+        if not self._is_channel_admin(channel, request.user):
+            return Response({"error": "You do not have permission"}, status=status.HTTP_403_FORBIDDEN)
+        for field in ["can_post", "can_create_channels", "can_manage_members"]:
+            if field in request.data:
+                setattr(channel, field, bool(request.data[field]))
+        channel.updated_by = request.user
+        channel.save(update_fields=["can_post", "can_create_channels", "can_manage_members", "updated_at", "updated_by"])
+        return Response(self._permission_payload(channel, request.user), status=status.HTTP_200_OK)
 
 
 class ChannelPinnedViewSet(ChatChannelAccessMixin, BaseViewSet):

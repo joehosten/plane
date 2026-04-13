@@ -101,6 +101,19 @@ export class ChannelService extends APIService {
       });
   }
 
+  async updateMember(
+    workspaceSlug: string,
+    channelId: string,
+    memberId: string,
+    data: Partial<TChannelMembership>
+  ): Promise<TChannelMembership> {
+    return this.patch(`/api/workspaces/${workspaceSlug}/channels/${channelId}/members/${memberId}/`, data)
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
   async getReadState(workspaceSlug: string, channelId: string): Promise<TChannelReadState> {
     return this.get(`/api/workspaces/${workspaceSlug}/channels/${channelId}/read-state/`)
       .then((response) => response?.data)

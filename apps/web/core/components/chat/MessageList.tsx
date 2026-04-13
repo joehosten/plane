@@ -25,9 +25,9 @@ function DateSeparator({ date }: { date: Date }) {
 
   return (
     <div className="flex items-center gap-3 px-4 py-2">
-      <div className="flex-1 h-px bg-subtle" />
+      <div className="bg-subtle h-px flex-1" />
       <span className="text-11 font-medium text-tertiary">{label}</span>
-      <div className="flex-1 h-px bg-subtle" />
+      <div className="bg-subtle h-px flex-1" />
     </div>
   );
 }
@@ -101,7 +101,7 @@ export const MessageList = observer(function MessageList({
 
   useEffect(() => {
     if (!topSentinelRef.current || !pagination?.next_cursor) return;
-    const observer = new IntersectionObserver(
+    const intersectionObserver = new IntersectionObserver(
       async ([entry]) => {
         if (entry.isIntersecting && pagination?.next_cursor && !isLoadingMore) {
           setIsLoadingMore(true);
@@ -114,8 +114,8 @@ export const MessageList = observer(function MessageList({
       },
       { threshold: 0.1 }
     );
-    observer.observe(topSentinelRef.current);
-    return () => observer.disconnect();
+    intersectionObserver.observe(topSentinelRef.current);
+    return () => intersectionObserver.disconnect();
   }, [pagination?.next_cursor, isLoadingMore, chat, workspaceSlug, channelId]);
 
   const typingUsers = chat.realtime.typingIndicators.get(channelId);
@@ -132,29 +132,23 @@ export const MessageList = observer(function MessageList({
       <div className="flex flex-1 flex-col items-center justify-center gap-2 p-8 text-center">
         <div className="text-4xl">💬</div>
         <p className="text-16 font-semibold text-primary">#{channel?.name ?? "Channel"}</p>
-        {channel?.description && <p className="text-13 text-secondary max-w-xs">{channel.description}</p>}
+        {channel?.description && <p className="max-w-xs text-13 text-secondary">{channel.description}</p>}
         <p className="text-13 text-tertiary">No messages yet. Be the first to send one!</p>
       </div>
     );
   }
 
   return (
-      <div className="relative flex h-full flex-col overflow-hidden bg-surface-1">
-      <div
-        ref={scrollContainerRef}
-        onScroll={handleScroll}
-        className="flex flex-1 flex-col overflow-y-auto py-3"
-      >
+    <div className="relative flex h-full flex-col overflow-hidden bg-surface-1">
+      <div ref={scrollContainerRef} onScroll={handleScroll} className="flex flex-1 flex-col overflow-y-auto py-2">
         {/* Sentinel for infinite scroll upward */}
         <div ref={topSentinelRef} className="h-1">
-          {isLoadingMore && (
-            <div className="p-2 text-center text-13 text-tertiary">Loading older messages…</div>
-          )}
+          {isLoadingMore && <div className="p-2 text-center text-13 text-tertiary">Loading older messages…</div>}
         </div>
 
         {grouped.map((item, idx) => {
           if (item instanceof Date) {
-            return <DateSeparator key={`sep-${idx}`} date={item} />;
+            return <DateSeparator key={`sep-${item.toISOString()}`} date={item} />;
           }
 
           const msg = item as TMessage;
@@ -180,7 +174,7 @@ export const MessageList = observer(function MessageList({
 
         {/* Typing indicator */}
         {typingNames.length > 0 && (
-          <div className="px-5 py-2 text-13 text-tertiary italic transition-opacity">
+          <div className="px-4 py-2 text-13 text-tertiary italic transition-opacity">
             {typingNames.join(", ")} {typingNames.length === 1 ? "is" : "are"} typing…
           </div>
         )}
@@ -192,8 +186,12 @@ export const MessageList = observer(function MessageList({
       {showScrollButton && (
         <button
           type="button"
-          onClick={() => { scrollToBottom(true); setShowScrollButton(false); isUserScrolledUp.current = false; }}
-          className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 rounded-full border border-subtle bg-surface-1 px-4 py-2 text-13 text-primary shadow-md transition-all duration-200 hover:bg-surface-2"
+          onClick={() => {
+            scrollToBottom(true);
+            setShowScrollButton(false);
+            isUserScrolledUp.current = false;
+          }}
+          className="shadow-md absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-subtle bg-surface-1 px-4 py-2 text-13 text-primary transition-all duration-200 hover:bg-surface-2"
         >
           <ChevronDown className="h-3.5 w-3.5" />
           New messages

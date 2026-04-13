@@ -45,6 +45,9 @@ class Channel(BaseModel):
     description = models.TextField(blank=True, default="")
     channel_type = models.CharField(max_length=32, choices=ChannelType.choices)
     is_archived = models.BooleanField(default=False)
+    can_post = models.BooleanField(default=True)
+    can_create_channels = models.BooleanField(default=False)
+    can_manage_members = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = "Channel"
@@ -102,6 +105,13 @@ class Message(BaseModel):
         null=True,
         blank=True,
     )
+    reply_to = models.ForeignKey(
+        "self",
+        related_name="quoted_replies",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
     issue = models.ForeignKey(
         "db.Issue",
         related_name="chat_messages",
@@ -124,7 +134,7 @@ class Message(BaseModel):
         ]
 
     def save(self, *args, **kwargs):
-        if self.content_html and self.content_html != "<p></p>":
+        if self.content_html and self.content_html != "<p></p>" and not self.content:
             self.content = strip_tags(self.content_html)
         elif self.content:
             self.content_html = self.content_html or f"<p>{self.content}</p>"

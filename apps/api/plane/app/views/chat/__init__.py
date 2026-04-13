@@ -5,6 +5,7 @@
 from .channel import (
     ChannelMembershipViewSet,
     ChannelPinnedViewSet,
+    ChannelPermissionsEndpoint,
     ChannelReadStateEndpoint,
     ChannelViewSet,
     DMChannelEndpoint,

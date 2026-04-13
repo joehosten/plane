@@ -53,6 +53,10 @@ export type TChannelPermissions = {
   can_post: boolean;
   can_create_channels: boolean;
   can_manage_members: boolean;
+  current_user_can_post?: boolean;
+  current_user_can_create_channels?: boolean;
+  current_user_can_manage_members?: boolean;
+  can_manage_permissions?: boolean;
 };
 
 export type TMessage = {
@@ -64,6 +68,7 @@ export type TMessage = {
   content_html: string;
   content_json: Record<string, unknown>;
   parent: string | null;
+  reply_to: string | null;
   thread_count: number;
   issue: string | null;
   issue_detail?: {
@@ -76,6 +81,7 @@ export type TMessage = {
   attachments: TMessageAttachment[];
   /** Array of workspace user IDs mentioned in this message (e.g. used to trigger mention toasts). */
   mentions: string[];
+  reply_to_id?: string | null;
   reply_to_detail?: Pick<TMessage, "id" | "content" | "sender_detail"> | null;
   edited_at: string | null;
   deleted_at: string | null;

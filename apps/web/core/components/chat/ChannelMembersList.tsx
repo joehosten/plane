@@ -8,15 +8,16 @@ import { useEffect } from "react";
 import { observer } from "mobx-react";
 import { X } from "lucide-react";
 import { Avatar } from "@plane/ui";
+import type { TChannelMembership } from "@plane/types";
 import { getFileURL } from "@plane/utils";
-import { EChannelRole } from "@plane/types";
-import { useChat, useChannelMembers } from "@/hooks/store/use-chat";
+import { useChat, useChannelMembers, useChannelPermissions } from "@/hooks/store/use-chat";
 
 const ROLE_LABELS: Record<number, string> = {
-  [EChannelRole.OWNER]: "Owner",
-  [EChannelRole.ADMIN]: "Admin",
-  [EChannelRole.MEMBER]: "Member",
-  [EChannelRole.READONLY]: "Read-only",
+  20: "Admin",
+  15: "Member",
+  80: "Admin",
+  50: "Member",
+  10: "Read-only",
 };
 
 export const ChannelMembersList = observer(function ChannelMembersList({
@@ -30,6 +31,8 @@ export const ChannelMembersList = observer(function ChannelMembersList({
 }) {
   const chat = useChat();
   const members = useChannelMembers(channelId);
+  const permissions = useChannelPermissions(channelId);
+  const canManageMembers = permissions?.current_user_can_manage_members ?? permissions?.can_manage_members ?? false;
 
   useEffect(() => {
     void chat.channel.fetchMembers(workspaceSlug, channelId);
@@ -43,14 +46,14 @@ export const ChannelMembersList = observer(function ChannelMembersList({
           <button
             type="button"
             onClick={onClose}
-            className="rounded p-1 text-tertiary hover:bg-surface-3 hover:text-primary"
+            className="hover:bg-surface-3 rounded p-1 text-tertiary hover:text-primary"
           >
             <X className="h-3.5 w-3.5" />
           </button>
         )}
       </div>
       <div className="flex max-h-48 flex-col overflow-y-auto">
-        {members.map((member) => (
+        {members.map((member: TChannelMembership) => (
           <div key={member.id} className="flex items-center gap-2 px-4 py-1.5 hover:bg-surface-2">
             <Avatar
               src={getFileURL(member.member_detail?.avatar_url ?? "")}
@@ -60,18 +63,34 @@ export const ChannelMembersList = observer(function ChannelMembersList({
             <span className="flex-1 truncate text-13 text-primary">
               {member.member_detail?.display_name ?? member.member}
             </span>
-            <span className="text-11 text-tertiary">{ROLE_LABELS[member.role] ?? String(member.role)}</span>
-            <button
-              type="button"
-              onClick={() => void chat.channel.removeMember(workspaceSlug, channelId, member.id)}
-              className="rounded px-1.5 py-0.5 text-11 text-red-500 hover:bg-red-50"
-            >
-              Remove
-            </button>
+            {canManageMembers ? (
+              <select
+                value={member.role}
+                onChange={(event) =>
+                  void chat.channel.updateMember(workspaceSlug, channelId, member.member, {
+                    role: Number(event.target.value),
+                  })
+                }
+                className="rounded border border-subtle bg-transparent px-2 py-0.5 text-11 text-secondary outline-none"
+              >
+                <option value={20}>Admin</option>
+                <option value={15}>Member</option>
+              </select>
+            ) : (
+              <span className="text-11 text-tertiary">{ROLE_LABELS[member.role] ?? String(member.role)}</span>
+            )}
+            {canManageMembers && (
+              <button
+                type="button"
+                onClick={() => void chat.channel.removeMember(workspaceSlug, channelId, member.member)}
+                className="text-red-500 hover:bg-red-50 rounded px-1.5 py-0.5 text-11"
+              >
+                Remove
+              </button>
+            )}
           </div>
         ))}
       </div>
     </div>
   );
 });
-

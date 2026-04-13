@@ -32,20 +32,22 @@ export const MessageThread = observer(function MessageThread({
   }, [channelId, chat, parentMessageId, workspaceSlug]);
 
   return (
-    <aside className="flex h-full w-[26rem] flex-shrink-0 flex-col border-l border-subtle bg-surface-2/95 backdrop-blur-sm">
+    <aside className="flex h-full w-[29rem] flex-shrink-0 flex-col border-l border-subtle bg-surface-2/95 backdrop-blur-sm">
       {/* Thread header */}
-      <div className="flex items-center justify-between border-b border-subtle px-5 py-4">
+      <div className="flex items-center justify-between border-b border-subtle px-4 py-3.5">
         <div>
           <div className="text-[15px] font-semibold text-primary">Thread</div>
           {thread.length > 0 && (
-            <div className="text-12 text-tertiary">{thread.length} {thread.length === 1 ? "reply" : "replies"}</div>
+            <div className="text-12 text-tertiary">
+              {thread.length} {thread.length === 1 ? "reply" : "replies"}
+            </div>
           )}
         </div>
         {onClose && (
           <button
             type="button"
             onClick={onClose}
-            className="rounded p-1 text-tertiary hover:bg-surface-3 hover:text-primary"
+            className="hover:bg-surface-3 rounded p-1 text-tertiary hover:text-primary"
           >
             <X className="h-4 w-4" />
           </button>
@@ -72,12 +74,7 @@ export const MessageThread = observer(function MessageThread({
         )}
 
         {thread.map((message) => (
-          <MessageItem
-            key={message.id}
-            message={message}
-            workspaceSlug={workspaceSlug}
-            channelId={channelId}
-          />
+          <MessageItem key={message.id} message={message} workspaceSlug={workspaceSlug} channelId={channelId} />
         ))}
       </div>
       <MessageComposer workspaceSlug={workspaceSlug} channelId={channelId} parentId={parentMessageId} />

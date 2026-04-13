@@ -38,24 +38,24 @@ export const ChannelHeader = observer(function ChannelHeader({
 
   const isDm = channel.channel_type === EChannelType.DM || channel.channel_type === EChannelType.GROUP_DM;
   const isPrivate = channel.channel_type === EChannelType.WORKSPACE_PRIVATE;
-  const canManage = permissions?.can_manage_members;
+  const canManage = permissions?.current_user_can_manage_members ?? permissions?.can_manage_members;
+  const canEditChannel = permissions?.current_user_can_create_channels ?? permissions?.can_create_channels;
+  const canOpenSettings = Boolean(canManage || canEditChannel || permissions?.can_manage_permissions);
 
   return (
     <>
-      <div className="flex items-center justify-between border-b border-subtle bg-surface-1/90 px-5 py-4 backdrop-blur-sm">
+      <div className="flex items-center justify-between border-b border-subtle bg-surface-1/90 px-4 py-3.5 backdrop-blur-sm">
         <div className="min-w-0">
-          <div className="truncate text-[16px] font-semibold text-primary">
+          <div className="truncate text-[17px] font-semibold text-primary">
             {isDm ? channel.name : `# ${channel.name}`}
           </div>
-          {channel.description && (
-            <div className="truncate pt-0.5 text-13 text-secondary">{channel.description}</div>
-          )}
+          {channel.description && <div className="truncate pt-0.5 text-13 text-secondary">{channel.description}</div>}
         </div>
         <div className="flex flex-shrink-0 items-center gap-1.5">
           <button
             type="button"
             onClick={() => setShowMembers(!showMembers)}
-            className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-13 text-secondary transition-colors hover:bg-surface-3 hover:text-primary"
+            className="hover:bg-surface-3 flex items-center gap-1.5 rounded-xl px-3 py-2 text-13 text-secondary transition-colors hover:text-primary"
           >
             <Users className="h-3.5 w-3.5" />
             <span>{channel.member_count}</span>
@@ -64,7 +64,7 @@ export const ChannelHeader = observer(function ChannelHeader({
             <button
               type="button"
               onClick={() => setShowSearch((prev) => !prev)}
-              className="rounded-xl p-2 text-tertiary transition-colors hover:bg-surface-3 hover:text-primary"
+              className="hover:bg-surface-3 rounded-xl p-2 text-tertiary transition-colors hover:text-primary"
             >
               <Search className="h-4 w-4" />
             </button>
@@ -74,18 +74,18 @@ export const ChannelHeader = observer(function ChannelHeader({
               <button
                 type="button"
                 onClick={() => setShowInvite(true)}
-                className="rounded-xl p-2 text-tertiary transition-colors hover:bg-surface-3 hover:text-primary"
+                className="hover:bg-surface-3 rounded-xl p-2 text-tertiary transition-colors hover:text-primary"
               >
                 <UserPlus className="h-4 w-4" />
               </button>
             </Tooltip>
           )}
-          {canManage && (
+          {canOpenSettings && (
             <Tooltip tooltipHeading="Channel settings" tooltipContent="Manage members, permissions, and details">
               <button
                 type="button"
                 onClick={() => setShowSettings(true)}
-                className="rounded-xl p-2 text-tertiary transition-colors hover:bg-surface-3 hover:text-primary"
+                className="hover:bg-surface-3 rounded-xl p-2 text-tertiary transition-colors hover:text-primary"
               >
                 <Settings className="h-4 w-4" />
               </button>
@@ -95,17 +95,11 @@ export const ChannelHeader = observer(function ChannelHeader({
       </div>
 
       {/* Search panel (inline, below header) */}
-      {showSearch && (
-        <MessageSearchPanel workspaceSlug={workspaceSlug} onClose={() => setShowSearch(false)} />
-      )}
+      {showSearch && <MessageSearchPanel workspaceSlug={workspaceSlug} onClose={() => setShowSearch(false)} />}
 
       {/* Members side panel */}
       {showMembers && (
-        <ChannelMembersList
-          workspaceSlug={workspaceSlug}
-          channelId={channelId}
-          onClose={() => setShowMembers(false)}
-        />
+        <ChannelMembersList workspaceSlug={workspaceSlug} channelId={channelId} onClose={() => setShowMembers(false)} />
       )}
 
       {/* Settings modal */}

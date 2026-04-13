@@ -7,6 +7,7 @@ from django.urls import path
 from plane.app.views import (
     ChannelMembershipViewSet,
     ChannelPinnedViewSet,
+    ChannelPermissionsEndpoint,
     ChannelReadStateEndpoint,
     ChannelViewSet,
     DMChannelEndpoint,
@@ -45,8 +46,13 @@ urlpatterns = [
     ),
     path(
         "workspaces/<str:slug>/channels/<uuid:channel_id>/members/<uuid:member_id>/",
-        ChannelMembershipViewSet.as_view({"delete": "destroy"}),
+        ChannelMembershipViewSet.as_view({"patch": "partial_update", "delete": "destroy"}),
         name="chat-channel-members-detail",
+    ),
+    path(
+        "workspaces/<str:slug>/channels/<uuid:channel_id>/permissions/",
+        ChannelPermissionsEndpoint.as_view(),
+        name="chat-channel-permissions",
     ),
     path(
         "workspaces/<str:slug>/channels/<uuid:channel_id>/messages/",

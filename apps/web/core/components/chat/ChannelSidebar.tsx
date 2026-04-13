@@ -47,19 +47,17 @@ function ChannelLink({
   return (
     <Link
       to={href}
-      className={`flex items-center justify-between rounded-xl px-3.5 py-2.5 text-[14px] transition-all duration-200 ${
+      className={`flex items-center justify-between rounded-xl px-3.5 py-2 text-[15px] transition-all duration-200 ${
         isActive
-          ? "bg-surface-3 font-medium text-primary shadow-sm"
-          : "text-secondary hover:bg-surface-3 hover:text-primary"
+          ? "bg-surface-3 shadow-sm font-medium text-primary"
+          : "hover:bg-surface-3 text-secondary hover:text-primary"
       }`}
     >
       <span className="truncate">
         {isPrivate ? "🔒 " : "# "}
         {channel.name}
       </span>
-      {channel.unread_count > 0 && (
-        <UnreadBadge count={channel.unread_count} />
-      )}
+      {channel.unread_count > 0 && <UnreadBadge count={channel.unread_count} />}
     </Link>
   );
 }
@@ -84,13 +82,9 @@ const Section = ({
         <button
           type="button"
           onClick={() => setCollapsed(!collapsed)}
-          className="flex flex-1 items-center gap-1 text-11 font-semibold uppercase text-tertiary hover:text-secondary"
+          className="flex flex-1 items-center gap-1 text-11 font-semibold text-tertiary uppercase hover:text-secondary"
         >
-          {collapsed ? (
-            <ChevronRight className="h-3 w-3" />
-          ) : (
-            <ChevronDown className="h-3 w-3" />
-          )}
+          {collapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
           {title}
         </button>
         <div className="flex items-center gap-0.5">
@@ -117,7 +111,7 @@ const Section = ({
         leaveFrom="transform translate-y-0 opacity-100"
         leaveTo="transform -translate-y-1 opacity-0"
       >
-        <div className="flex flex-col">{children}</div>
+        <div className="flex flex-col gap-0.5 pr-1 pl-4">{children}</div>
       </Transition>
     </div>
   );
@@ -150,9 +144,7 @@ export const ChannelSidebar = observer(function ChannelSidebar({
 
   const buildHref = (channelId: string, isDM?: boolean) => {
     if (projectId) return `/${workspaceSlug}/projects/${projectId}/chat/${channelId}`;
-    return isDM
-      ? `/${workspaceSlug}/messaging/dms/${channelId}`
-      : `/${workspaceSlug}/messaging/channels/${channelId}`;
+    return isDM ? `/${workspaceSlug}/messaging/dms/${channelId}` : `/${workspaceSlug}/messaging/channels/${channelId}`;
   };
 
   const handleChannelCreated = (channelId: string) => {
@@ -160,16 +152,12 @@ export const ChannelSidebar = observer(function ChannelSidebar({
   };
 
   return (
-    <aside className="flex h-full w-80 flex-shrink-0 flex-col border-r border-subtle bg-surface-2/90 backdrop-blur-sm">
-      <div className="px-4 py-4 text-[15px] font-semibold text-primary">Messaging</div>
-      <div className="flex flex-1 flex-col gap-3 overflow-y-auto px-1 py-1">
+    <aside className="flex h-full w-88 flex-shrink-0 flex-col border-r border-subtle bg-surface-2/90 backdrop-blur-sm">
+      <div className="px-4 py-3.5 text-[16px] font-semibold text-primary">Messaging</div>
+      <div className="flex flex-1 flex-col gap-2.5 overflow-y-auto px-1.5 py-1.5">
         {!projectId && (
           <>
-            <Section
-              title="Channels"
-              onAdd={() => setIsCreateOpen(true)}
-              addTitle="New channel"
-            >
+            <Section title="Channels" onAdd={() => setIsCreateOpen(true)} addTitle="New channel">
               {chat.channel.workspacePublicChannels.map((channel) => (
                 <ChannelLink
                   key={channel.id}
@@ -207,10 +195,10 @@ export const ChannelSidebar = observer(function ChannelSidebar({
                 <Link
                   key={channel.id}
                   to={buildHref(channel.id, true)}
-                  className={`flex items-center justify-between rounded-xl px-3.5 py-2.5 text-[14px] transition-all duration-200 ${
+                  className={`flex items-center justify-between rounded-xl px-3.5 py-2 text-[15px] transition-all duration-200 ${
                     channel.id === activeChannelId
-                      ? "bg-surface-3 font-medium text-primary shadow-sm"
-                      : "text-secondary hover:bg-surface-3 hover:text-primary"
+                      ? "bg-surface-3 shadow-sm font-medium text-primary"
+                      : "hover:bg-surface-3 text-secondary hover:text-primary"
                   }`}
                 >
                   <span className="truncate">{channel.name}</span>

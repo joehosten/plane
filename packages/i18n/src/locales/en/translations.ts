@@ -2263,6 +2263,10 @@ export default {
       },
     },
   },
+  chat: {
+    page_label: "Messaging",
+    select_channel: "Select a channel to start messaging.",
+  },
   disabled_project: {
     empty_state: {
       inbox: {

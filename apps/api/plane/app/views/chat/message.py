@@ -28,7 +28,7 @@ class MessageViewSet(ChatChannelAccessMixin, BaseViewSet):
     def get_queryset(self):
         return (
             Message.objects.filter(channel_id=self.kwargs.get("channel_id"), parent__isnull=True, deleted_at__isnull=True)
-            .select_related("sender", "issue")
+            .select_related("sender", "issue", "reply_to", "reply_to__sender")
             .prefetch_related("attachments", "message_reactions")
             .annotate(thread_count=Count("thread_replies", filter=Q(thread_replies__deleted_at__isnull=True)))
             .order_by("-created_at")
@@ -52,6 +52,8 @@ class MessageViewSet(ChatChannelAccessMixin, BaseViewSet):
     def create(self, request, slug, channel_id):
         channel = Channel.objects.get(pk=channel_id, workspace__slug=slug)
         if not self._can_access_channel(channel, request.user):
+            return Response({"error": "You do not have permission"}, status=status.HTTP_403_FORBIDDEN)
+        if not self._permission_payload(channel, request.user)["current_user_can_post"]:
             return Response({"error": "You do not have permission"}, status=status.HTTP_403_FORBIDDEN)
         serializer = MessageSerializer(data=request.data, context={"channel_id": channel_id})
         if not serializer.is_valid():
@@ -102,7 +104,7 @@ class ThreadMessageViewSet(ChatChannelAccessMixin, BaseAPIView):
             return Response({"error": "You do not have permission"}, status=status.HTTP_403_FORBIDDEN)
         queryset = (
             Message.objects.filter(channel=channel, parent_id=message_id, deleted_at__isnull=True)
-            .select_related("sender", "issue")
+            .select_related("sender", "issue", "reply_to", "reply_to__sender")
             .prefetch_related("attachments", "message_reactions")
             .order_by("created_at")
         )
@@ -112,6 +114,8 @@ class ThreadMessageViewSet(ChatChannelAccessMixin, BaseAPIView):
     def post(self, request, slug, channel_id, message_id):
         channel = Channel.objects.get(pk=channel_id, workspace__slug=slug)
         if not self._can_access_channel(channel, request.user):
+            return Response({"error": "You do not have permission"}, status=status.HTTP_403_FORBIDDEN)
+        if not self._permission_payload(channel, request.user)["current_user_can_post"]:
             return Response({"error": "You do not have permission"}, status=status.HTTP_403_FORBIDDEN)
         serializer = MessageSerializer(data=request.data, context={"channel_id": channel_id})
         if not serializer.is_valid():

@@ -8,6 +8,7 @@ from django.utils import timezone
 
 # Third Party imports
 from rest_framework import serializers
+from bs4 import BeautifulSoup
 
 # Module imports
 from .base import BaseSerializer
@@ -158,8 +159,11 @@ class MessageSerializer(BaseSerializer):
     attachments = MessageAttachmentSerializer(many=True, read_only=True)
     issue_detail = serializers.SerializerMethodField()
     thread_count = serializers.SerializerMethodField()
+    mentions = serializers.SerializerMethodField()
+    reply_to_detail = serializers.SerializerMethodField()
     issue_id = serializers.PrimaryKeyRelatedField(source="issue", queryset=Issue.objects.all(), allow_null=True, required=False)
     parent_id = serializers.PrimaryKeyRelatedField(source="parent", queryset=Message.objects.all(), allow_null=True, required=False)
+    reply_to_id = serializers.PrimaryKeyRelatedField(source="reply_to", queryset=Message.objects.all(), allow_null=True, required=False)
     attachment_payloads = MessageAttachmentSerializer(many=True, write_only=True, required=False, source="attachments")
 
     class Meta:
@@ -174,6 +178,8 @@ class MessageSerializer(BaseSerializer):
             "content_html",
             "parent",
             "parent_id",
+            "reply_to",
+            "reply_to_id",
             "thread_count",
             "issue",
             "issue_id",
@@ -181,6 +187,8 @@ class MessageSerializer(BaseSerializer):
             "reactions",
             "attachments",
             "attachment_payloads",
+            "mentions",
+            "reply_to_detail",
             "edited_at",
             "deleted_at",
             "external_id",
@@ -196,6 +204,8 @@ class MessageSerializer(BaseSerializer):
             "issue_detail",
             "reactions",
             "attachments",
+            "mentions",
+            "reply_to_detail",
             "edited_at",
             "deleted_at",
             "created_at",
@@ -204,9 +214,12 @@ class MessageSerializer(BaseSerializer):
 
     def validate(self, attrs):
         parent = attrs.get("parent")
+        reply_to = attrs.get("reply_to")
         channel_id = self.context.get("channel_id")
         if parent and channel_id and str(parent.channel_id) != str(channel_id):
             raise serializers.ValidationError({"parent_id": "Parent message must belong to the same channel."})
+        if reply_to and channel_id and str(reply_to.channel_id) != str(channel_id):
+            raise serializers.ValidationError({"reply_to_id": "Quoted message must belong to the same channel."})
         if "content_html" in attrs and attrs["content_html"]:
             is_valid, _error_message, sanitized_html = validate_html_content(attrs["content_html"])
             if not is_valid:
@@ -257,6 +270,30 @@ class MessageSerializer(BaseSerializer):
 
     def get_thread_count(self, obj):
         return getattr(obj, "thread_count", None) or obj.thread_replies.filter(deleted_at__isnull=True).count()
+
+    def get_mentions(self, obj):
+        soup = BeautifulSoup(obj.content_html or "", "html.parser")
+        mentions = {
+            mention.get("entity_identifier")
+            for mention in soup.find_all("mention-component", attrs={"entity_name": "user_mention"})
+            if mention.get("entity_identifier")
+        }
+        if "@everyone" in (obj.content or "").lower():
+            mentions.update(
+                str(member_id)
+                for member_id in obj.channel.memberships.filter(deleted_at__isnull=True).values_list("member_id", flat=True)
+            )
+        return list(mentions)
+
+    def get_reply_to_detail(self, obj):
+        if not obj.reply_to_id:
+            return None
+        reply_to = obj.reply_to
+        return {
+            "id": str(reply_to.id),
+            "content": reply_to.content,
+            "sender_detail": UserLiteSerializer(reply_to.sender).data,
+        }
 
 
 class ChannelPinnedSerializer(BaseSerializer):

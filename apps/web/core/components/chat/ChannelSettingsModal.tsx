@@ -28,6 +28,8 @@ export const ChannelSettingsModal = observer(function ChannelSettingsModal({
   const [name, setName] = useState(channel?.name ?? "");
   const [description, setDescription] = useState(channel?.description ?? "");
   const [isSaving, setIsSaving] = useState(false);
+  const canManagePermissions = permissions?.can_manage_permissions ?? false;
+  const canEditChannel = permissions?.current_user_can_create_channels ?? permissions?.can_create_channels ?? false;
 
   useEffect(() => {
     void chat.channel.fetchPermissions(workspaceSlug, channelId);
@@ -36,6 +38,7 @@ export const ChannelSettingsModal = observer(function ChannelSettingsModal({
   const handleSaveGeneral = async () => {
     setIsSaving(true);
     try {
+      if (!canEditChannel) return;
       await chat.channel.updateChannel(workspaceSlug, channelId, { name, description });
     } finally {
       setIsSaving(false);
@@ -49,17 +52,17 @@ export const ChannelSettingsModal = observer(function ChannelSettingsModal({
   };
 
   const togglePermission = async (key: "can_post" | "can_create_channels" | "can_manage_members") => {
-    if (!permissions) return;
+    if (!permissions || !canManagePermissions) return;
     await chat.channel.updatePermissions(workspaceSlug, channelId, { [key]: !permissions[key] });
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="relative flex w-[480px] flex-col rounded-xl border border-subtle bg-surface-1 shadow-xl">
+      <div className="shadow-xl relative flex w-[480px] flex-col rounded-xl border border-subtle bg-surface-1">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-subtle px-5 py-4">
           <h2 className="text-14 font-semibold text-primary">Channel Settings</h2>
-          <button type="button" onClick={onClose} className="rounded p-1 text-tertiary hover:bg-surface-3">
+          <button type="button" onClick={onClose} className="hover:bg-surface-3 rounded p-1 text-tertiary">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -73,7 +76,7 @@ export const ChannelSettingsModal = observer(function ChannelSettingsModal({
               onClick={() => setTab(t)}
               className={`px-3 py-2.5 text-13 capitalize transition-colors ${
                 tab === t
-                  ? "border-b-2 border-accent-primary font-medium text-primary"
+                  ? "border-accent-primary border-b-2 font-medium text-primary"
                   : "text-secondary hover:text-primary"
               }`}
             >
@@ -87,33 +90,40 @@ export const ChannelSettingsModal = observer(function ChannelSettingsModal({
           {tab === "general" && (
             <>
               <div className="flex flex-col gap-1.5">
-                <label className="text-12 font-medium text-secondary">Channel name</label>
+                <label htmlFor="chat-channel-name" className="text-12 font-medium text-secondary">
+                  Channel name
+                </label>
                 <input
+                  id="chat-channel-name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="rounded-md border border-subtle bg-transparent px-3 py-2 text-13 text-primary outline-none focus:border-accent-primary"
+                  className="focus:border-accent-primary rounded-md border border-subtle bg-transparent px-3 py-2 text-13 text-primary outline-none"
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <label className="text-12 font-medium text-secondary">Description</label>
+                <label htmlFor="chat-channel-description" className="text-12 font-medium text-secondary">
+                  Description
+                </label>
                 <textarea
+                  id="chat-channel-description"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={2}
-                  className="rounded-md border border-subtle bg-transparent px-3 py-2 text-13 text-primary outline-none focus:border-accent-primary resize-none"
+                  className="focus:border-accent-primary resize-none rounded-md border border-subtle bg-transparent px-3 py-2 text-13 text-primary outline-none"
                 />
               </div>
               <div className="flex items-center justify-between">
                 <button
                   type="button"
                   onClick={() => void handleArchive()}
-                  className="text-12 text-red-500 hover:underline"
+                  disabled={!canEditChannel}
+                  className="text-red-500 text-12 hover:underline"
                 >
                   Archive channel
                 </button>
                 <button
                   type="button"
-                  disabled={isSaving}
+                  disabled={isSaving || !canEditChannel}
                   onClick={() => void handleSaveGeneral()}
                   className="rounded bg-accent-primary px-3 py-1.5 text-12 font-medium text-white disabled:opacity-50"
                 >
@@ -123,16 +133,14 @@ export const ChannelSettingsModal = observer(function ChannelSettingsModal({
             </>
           )}
 
-          {tab === "members" && (
-            <ChannelMembersList workspaceSlug={workspaceSlug} channelId={channelId} />
-          )}
+          {tab === "members" && <ChannelMembersList workspaceSlug={workspaceSlug} channelId={channelId} />}
 
           {tab === "permissions" && permissions && (
             <div className="flex flex-col gap-3">
               {(
                 [
                   { key: "can_post", label: "Members can post messages" },
-                  { key: "can_create_channels", label: "Members can create channels" },
+                  { key: "can_create_channels", label: "Members can edit channel details" },
                   { key: "can_manage_members", label: "Members can manage channel members" },
                 ] as const
               ).map(({ key, label }) => (
@@ -140,13 +148,14 @@ export const ChannelSettingsModal = observer(function ChannelSettingsModal({
                   <span className="text-13 text-primary">{label}</span>
                   <button
                     type="button"
+                    disabled={!canManagePermissions}
                     onClick={() => void togglePermission(key)}
-                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors disabled:opacity-50 ${
                       permissions[key] ? "bg-accent-primary" : "bg-surface-3"
                     }`}
                   >
                     <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                      className={`shadow inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
                         permissions[key] ? "translate-x-4" : "translate-x-0.5"
                       }`}
                     />
@@ -160,4 +169,3 @@ export const ChannelSettingsModal = observer(function ChannelSettingsModal({
     </div>
   );
 });
-
