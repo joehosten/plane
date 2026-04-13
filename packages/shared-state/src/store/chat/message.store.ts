@@ -148,15 +148,21 @@ export class MessageStore implements IMessageStore {
     const message = await this.service.sendThreadReply(workspaceSlug, channelId, messageId, data);
     const existingThread = this.threadMessages.get(messageId) ?? [];
     this.threadMessages.set(messageId, mergeMessages(existingThread, [message]));
+    this.updateParentThreadCount(messageId, 1);
     return message;
   };
 
   upsertMessage = (message: TMessage) => {
+    const alreadyInChannel = (this.channelMessages.get(message.channel) ?? []).some((item) => item.id === message.id);
     const existing = this.channelMessages.get(message.channel) ?? [];
     this.channelMessages.set(message.channel, mergeMessages(existing, [message]));
     if (message.parent) {
       const thread = this.threadMessages.get(message.parent) ?? [];
+      const alreadyInThread = thread.some((item) => item.id === message.id);
       this.threadMessages.set(message.parent, mergeMessages(thread, [message]));
+      if (!alreadyInThread && !alreadyInChannel) {
+        this.updateParentThreadCount(message.parent, 1);
+      }
     }
   };
 
@@ -167,4 +173,18 @@ export class MessageStore implements IMessageStore {
     const updatedMessage = Object.assign({}, existing[messageIndex], { deleted_at: new Date().toISOString() });
     this.channelMessages.set(channelId, existing.with(messageIndex, updatedMessage));
   };
+
+  private updateParentThreadCount(parentId: string, delta: number) {
+    this.channelMessages.forEach((messages, channelId) => {
+      const nextMessages = messages.map((message) =>
+        message.id === parentId
+          ? {
+              ...message,
+              thread_count: Math.max(0, (message.thread_count ?? 0) + delta),
+            }
+          : message
+      );
+      this.channelMessages.set(channelId, nextMessages);
+    });
+  }
 }

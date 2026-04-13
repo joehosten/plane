@@ -9,6 +9,7 @@ import { observer } from "mobx-react";
 import { format, isToday, isYesterday, isSameDay } from "date-fns";
 import { ChevronDown } from "lucide-react";
 import type { TMessage } from "@plane/types";
+import { useUser } from "@/hooks/store/user";
 import { useChat, useMessages } from "@/hooks/store/use-chat";
 import { useMember } from "@/hooks/store/use-member";
 import { MessageItem } from "./MessageItem";
@@ -55,6 +56,7 @@ export const MessageList = observer(function MessageList({
   onOpenThread?: (messageId: string) => void;
 }) {
   const chat = useChat();
+  const { data: currentUser } = useUser();
   const { messages, pagination } = useMessages(channelId);
   const { getUserDetails } = useMember();
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -68,8 +70,13 @@ export const MessageList = observer(function MessageList({
     void chat.message.fetchMessages(workspaceSlug, channelId);
   }, [channelId, chat, workspaceSlug]);
 
+  useEffect(() => {
+    chat.realtime.connect({ channelId, workspaceSlug, userId: currentUser?.id });
+    return () => chat.realtime.disconnect();
+  }, [channelId, chat, currentUser?.id, workspaceSlug]);
+
   const scrollToBottom = useCallback((smooth = false) => {
-    bottomRef.current?.scrollIntoView({ behavior: smooth ? "smooth" : "instant" });
+    bottomRef.current?.scrollIntoView({ behavior: smooth ? "smooth" : "auto" });
   }, []);
 
   useEffect(() => {
@@ -116,9 +123,10 @@ export const MessageList = observer(function MessageList({
     ? [...typingUsers].map((uid) => getUserDetails(uid)?.display_name ?? uid).filter(Boolean)
     : [];
 
-  const grouped = groupMessages(messages);
+  const topLevelMessages = messages.filter((message) => !message.parent);
+  const grouped = groupMessages(topLevelMessages);
 
-  if (!messages.length) {
+  if (!topLevelMessages.length) {
     const channel = chat.channel.getChannel(channelId);
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-2 p-8 text-center">
@@ -131,16 +139,16 @@ export const MessageList = observer(function MessageList({
   }
 
   return (
-    <div className="relative flex h-full flex-col overflow-hidden">
+      <div className="relative flex h-full flex-col overflow-hidden bg-surface-1">
       <div
         ref={scrollContainerRef}
         onScroll={handleScroll}
-        className="flex flex-1 flex-col overflow-y-auto py-2"
+        className="flex flex-1 flex-col overflow-y-auto py-3"
       >
         {/* Sentinel for infinite scroll upward */}
         <div ref={topSentinelRef} className="h-1">
           {isLoadingMore && (
-            <div className="p-2 text-center text-12 text-tertiary">Loading older messages…</div>
+            <div className="p-2 text-center text-13 text-tertiary">Loading older messages…</div>
           )}
         </div>
 
@@ -172,7 +180,7 @@ export const MessageList = observer(function MessageList({
 
         {/* Typing indicator */}
         {typingNames.length > 0 && (
-          <div className="px-4 py-1 text-12 text-tertiary italic">
+          <div className="px-5 py-2 text-13 text-tertiary italic transition-opacity">
             {typingNames.join(", ")} {typingNames.length === 1 ? "is" : "are"} typing…
           </div>
         )}
@@ -185,7 +193,7 @@ export const MessageList = observer(function MessageList({
         <button
           type="button"
           onClick={() => { scrollToBottom(true); setShowScrollButton(false); isUserScrolledUp.current = false; }}
-          className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1 rounded-full border border-subtle bg-surface-1 px-3 py-1.5 text-12 text-primary shadow-md hover:bg-surface-2"
+          className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 rounded-full border border-subtle bg-surface-1 px-4 py-2 text-13 text-primary shadow-md transition-all duration-200 hover:bg-surface-2"
         >
           <ChevronDown className="h-3.5 w-3.5" />
           New messages

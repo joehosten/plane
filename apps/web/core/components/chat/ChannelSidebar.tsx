@@ -4,11 +4,13 @@
  * See the LICENSE file for details.
  */
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { observer } from "mobx-react";
 import { ChevronDown, ChevronRight, MessageSquarePlus, Plus } from "lucide-react";
+import { Transition } from "@headlessui/react";
 import { Link, useNavigate, useParams } from "react-router";
+import { EChannelType } from "@plane/types";
 import type { TChannel } from "@plane/types";
 import { useChat } from "@/hooks/store/use-chat";
 import { WorkspacePresenceList } from "./WorkspacePresenceList";
@@ -20,12 +22,12 @@ function UnreadBadge({ count }: { count: number }) {
   if (!count) return null;
   if (count > 99)
     return (
-      <span className="min-w-5 rounded-full bg-accent-primary px-1 py-0.5 text-center text-10 font-semibold text-white">
+      <span className="min-w-6 rounded-full bg-accent-primary px-1.5 py-0.5 text-center text-11 font-semibold text-white">
         99+
       </span>
     );
   return (
-    <span className="min-w-5 rounded-full bg-accent-primary px-1 py-0.5 text-center text-10 font-semibold text-white">
+    <span className="min-w-6 rounded-full bg-accent-primary px-1.5 py-0.5 text-center text-11 font-semibold text-white">
       {count}
     </span>
   );
@@ -41,12 +43,14 @@ function ChannelLink({
   activeChannelId?: string;
 }) {
   const isActive = channel.id === activeChannelId;
-  const isPrivate = channel.channel_type === "WORKSPACE_PRIVATE";
+  const isPrivate = channel.channel_type === EChannelType.WORKSPACE_PRIVATE;
   return (
     <Link
       to={href}
-      className={`flex items-center justify-between rounded-md px-3 py-1.5 text-13 transition-colors ${
-        isActive ? "bg-surface-3 font-medium text-primary" : "text-secondary hover:bg-surface-3 hover:text-primary"
+      className={`flex items-center justify-between rounded-xl px-3.5 py-2.5 text-[14px] transition-all duration-200 ${
+        isActive
+          ? "bg-surface-3 font-medium text-primary shadow-sm"
+          : "text-secondary hover:bg-surface-3 hover:text-primary"
       }`}
     >
       <span className="truncate">
@@ -76,7 +80,7 @@ const Section = ({
   const [collapsed, setCollapsed] = useState(false);
   return (
     <div className="flex flex-col gap-0.5">
-      <div className="flex items-center justify-between px-3 py-1">
+      <div className="flex items-center justify-between px-3 py-1.5">
         <button
           type="button"
           onClick={() => setCollapsed(!collapsed)}
@@ -103,7 +107,18 @@ const Section = ({
           )}
         </div>
       </div>
-      {!collapsed && <div className="flex flex-col">{children}</div>}
+      <Transition
+        as={Fragment}
+        show={!collapsed}
+        enter="transition duration-200 ease-out"
+        enterFrom="transform -translate-y-1 opacity-0"
+        enterTo="transform translate-y-0 opacity-100"
+        leave="transition duration-150 ease-in"
+        leaveFrom="transform translate-y-0 opacity-100"
+        leaveTo="transform -translate-y-1 opacity-0"
+      >
+        <div className="flex flex-col">{children}</div>
+      </Transition>
     </div>
   );
 };
@@ -127,6 +142,12 @@ export const ChannelSidebar = observer(function ChannelSidebar({
     else void chat.channel.fetchWorkspaceChannels(workspaceSlug);
   }, [chat, projectId, workspaceSlug]);
 
+  useEffect(() => {
+    if (!activeChannelId) return;
+    if (chat.channel.getChannel(activeChannelId)) return;
+    void chat.channel.fetchChannel(workspaceSlug, activeChannelId);
+  }, [activeChannelId, chat, workspaceSlug]);
+
   const buildHref = (channelId: string, isDM?: boolean) => {
     if (projectId) return `/${workspaceSlug}/projects/${projectId}/chat/${channelId}`;
     return isDM
@@ -139,8 +160,8 @@ export const ChannelSidebar = observer(function ChannelSidebar({
   };
 
   return (
-    <aside className="flex h-full w-64 flex-shrink-0 flex-col border-r border-subtle bg-surface-2">
-      <div className="px-3 py-3 text-13 font-semibold text-primary">Messaging</div>
+    <aside className="flex h-full w-80 flex-shrink-0 flex-col border-r border-subtle bg-surface-2/90 backdrop-blur-sm">
+      <div className="px-4 py-4 text-[15px] font-semibold text-primary">Messaging</div>
       <div className="flex flex-1 flex-col gap-3 overflow-y-auto px-1 py-1">
         {!projectId && (
           <>
@@ -186,9 +207,9 @@ export const ChannelSidebar = observer(function ChannelSidebar({
                 <Link
                   key={channel.id}
                   to={buildHref(channel.id, true)}
-                  className={`flex items-center justify-between rounded-md px-3 py-1.5 text-13 transition-colors ${
+                  className={`flex items-center justify-between rounded-xl px-3.5 py-2.5 text-[14px] transition-all duration-200 ${
                     channel.id === activeChannelId
-                      ? "bg-surface-3 font-medium text-primary"
+                      ? "bg-surface-3 font-medium text-primary shadow-sm"
                       : "text-secondary hover:bg-surface-3 hover:text-primary"
                   }`}
                 >

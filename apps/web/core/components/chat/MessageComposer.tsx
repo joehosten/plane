@@ -4,13 +4,17 @@
  * See the LICENSE file for details.
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { observer } from "mobx-react";
 import { Paperclip, X } from "lucide-react";
 import { Avatar } from "@plane/ui";
+import { Tooltip } from "@plane/propel/tooltip";
+import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import { escapeHtml, getFileURL } from "@plane/utils";
-import type { IUserLite } from "@plane/types";
+import { EFileAssetType } from "@plane/types";
+import type { IUserLite, TMessageAttachment } from "@plane/types";
 import { useChat } from "@/hooks/store/use-chat";
+import { useEditorAsset } from "@/hooks/store/use-editor-asset";
 import { useMember } from "@/hooks/store/use-member";
 import { useChannelPermissions } from "@/hooks/store/use-chat";
 
@@ -20,6 +24,9 @@ type TPendingAttachment = {
   id: string;
   file: File;
   preview?: string;
+  uploaded?: TMessageAttachment;
+  isUploading: boolean;
+  error?: string;
 };
 
 export const MessageComposer = observer(function MessageComposer({
@@ -33,7 +40,9 @@ export const MessageComposer = observer(function MessageComposer({
 }) {
   const chat = useChat();
   const { getUserDetails, getMemberIds } = useMember();
+  const { uploadEditorAsset } = useEditorAsset();
   const permissions = useChannelPermissions(channelId);
+  const channel = chat.channel.getChannel(channelId);
 
   const [value, setValue] = useState("");
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
@@ -46,7 +55,16 @@ export const MessageComposer = observer(function MessageComposer({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const uploadingCount = useMemo(
+    () => pendingAttachments.filter((attachment) => attachment.isUploading).length,
+    [pendingAttachments]
+  );
+
   const replyingTo = chat.message.replyingTo;
+
+  useEffect(() => {
+    void chat.channel.fetchPermissions(workspaceSlug, channelId);
+  }, [channelId, chat, workspaceSlug]);
 
   useEffect(() => {
     if (!mentionQuery && mentionQuery !== "") {
@@ -89,13 +107,57 @@ export const MessageComposer = observer(function MessageComposer({
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
     files.forEach((file) => {
-      const att: TPendingAttachment = { id: crypto.randomUUID(), file };
+      const id = crypto.randomUUID();
+      const att: TPendingAttachment = { id, file, isUploading: true };
       if (file.type.startsWith("image/")) {
         att.preview = URL.createObjectURL(file);
       }
       setPendingAttachments((prev) => [...prev, att]);
+      void uploadAttachment(id, file);
     });
     if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const uploadAttachment = async (attachmentId: string, file: File) => {
+    try {
+      const { asset_id } = await uploadEditorAsset({
+        blockId: attachmentId,
+        data: {
+          entity_identifier: channelId,
+          entity_type: EFileAssetType.CHAT_MESSAGE_ATTACHMENT,
+        },
+        file,
+        projectId: channel?.project ?? undefined,
+        workspaceSlug,
+      });
+      setPendingAttachments((prev) =>
+        prev.map((attachment) =>
+          attachment.id === attachmentId
+            ? {
+                ...attachment,
+                isUploading: false,
+                uploaded: {
+                  asset_id,
+                  file_name: file.name,
+                  file_size: file.size,
+                  mime_type: file.type || "application/octet-stream",
+                },
+              }
+            : attachment
+        )
+      );
+    } catch {
+      setPendingAttachments((prev) =>
+        prev.map((attachment) =>
+          attachment.id === attachmentId ? { ...attachment, error: "Upload failed", isUploading: false } : attachment
+        )
+      );
+      setToast({
+        type: TOAST_TYPE.ERROR,
+        title: "Upload failed",
+        message: `${file.name} could not be uploaded.`,
+      });
+    }
   };
 
   const removeAttachment = (id: string) => {
@@ -123,6 +185,7 @@ export const MessageComposer = observer(function MessageComposer({
   const handleSubmit = async () => {
     const content = value.trim();
     if (!content && !pendingAttachments.length) return;
+    if (uploadingCount > 0) return;
     setIsSubmitting(true);
 
     try {
@@ -130,6 +193,7 @@ export const MessageComposer = observer(function MessageComposer({
         content,
         content_html: buildContentHtml(content),
         mentions: pendingMentions,
+        attachment_payloads: pendingAttachments.flatMap((attachment) => (attachment.uploaded ? [attachment.uploaded] : [])),
         ...(replyingTo ? { parent: replyingTo.id } : {}),
       };
 
@@ -159,15 +223,15 @@ export const MessageComposer = observer(function MessageComposer({
   }
 
   return (
-    <div className="border-t border-subtle px-4 py-3 flex flex-col gap-2">
+    <div className="border-t border-subtle px-5 py-4 flex flex-col gap-3 bg-surface-1/80 backdrop-blur-sm">
       {/* Reply-to strip */}
       {replyingTo && !parentId && (
-        <div className="flex items-start justify-between rounded-md border border-subtle bg-surface-2 px-3 py-2">
+        <div className="flex items-start justify-between rounded-xl border border-amber-500/20 bg-amber-500/5 px-3.5 py-2.5 transition-colors">
           <div className="flex flex-col gap-0.5 min-w-0">
-            <span className="text-11 font-medium text-secondary">
+            <span className="text-12 font-medium text-secondary">
               Replying to {replyingTo.sender_detail?.display_name ?? ""}
             </span>
-            <span className="text-12 text-tertiary truncate">{replyingTo.content}</span>
+            <span className="text-13 text-tertiary truncate">{replyingTo.content}</span>
           </div>
           <button
             type="button"
@@ -183,18 +247,23 @@ export const MessageComposer = observer(function MessageComposer({
       {pendingAttachments.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {pendingAttachments.map((att) => (
-            <div key={att.id} className="relative">
+            <div key={att.id} className="relative overflow-hidden rounded-xl border border-subtle bg-surface-2">
               {att.preview ? (
-                <img src={att.preview} alt={att.file.name} className="h-16 w-16 rounded-md object-cover border border-subtle" />
+                <img src={att.preview} alt={att.file.name} className="h-20 w-20 object-cover" />
               ) : (
-                <div className="flex h-16 w-24 items-center justify-center rounded-md border border-subtle bg-surface-2 text-11 text-secondary">
+                <div className="flex h-20 w-28 items-center justify-center text-11 text-secondary">
                   {att.file.name}
+                </div>
+              )}
+              {att.isUploading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/40 text-11 font-medium text-white">
+                  Uploading…
                 </div>
               )}
               <button
                 type="button"
                 onClick={() => removeAttachment(att.id)}
-                className="absolute -right-1 -top-1 rounded-full bg-surface-1 border border-subtle p-0.5 text-tertiary hover:text-primary"
+                className="absolute right-1 top-1 rounded-full bg-surface-1/90 border border-subtle p-0.5 text-tertiary hover:text-primary"
               >
                 <X className="h-2.5 w-2.5" />
               </button>
@@ -205,13 +274,13 @@ export const MessageComposer = observer(function MessageComposer({
 
       {/* Mention dropdown */}
       {mentionQuery !== null && mentionCandidates.length > 0 && (
-        <div className="rounded-md border border-subtle bg-surface-1 shadow-md">
+        <div className="overflow-hidden rounded-xl border border-subtle bg-surface-1 shadow-lg transition-all duration-200">
           {mentionCandidates.map((user) => (
             <button
               key={user.id}
               type="button"
               onMouseDown={(e) => { e.preventDefault(); insertMention(user); }}
-              className="flex w-full items-center gap-2 px-3 py-2 text-13 text-primary hover:bg-surface-2"
+              className="flex w-full items-center gap-2 px-3.5 py-2.5 text-14 text-primary transition-colors hover:bg-surface-2"
             >
               <Avatar src={getFileURL(user.avatar_url ?? "")} name={user.display_name} size="sm" />
               <span>{user.display_name}</span>
@@ -234,8 +303,8 @@ export const MessageComposer = observer(function MessageComposer({
             }
           }}
           placeholder="Write a message… (@ to mention, Shift+Enter for new line)"
-          rows={2}
-          className="min-h-16 w-full rounded-md border border-subtle bg-transparent px-3 py-2 pr-10 text-13 text-primary placeholder:text-tertiary outline-none resize-none focus:border-accent-primary"
+          rows={3}
+          className="min-h-24 w-full rounded-2xl border border-subtle bg-transparent px-4 py-3 pr-10 text-[15px] leading-6 text-primary placeholder:text-tertiary outline-none resize-none transition-all duration-200 focus:border-accent-primary focus:bg-surface-1"
         />
       </div>
 
@@ -243,14 +312,15 @@ export const MessageComposer = observer(function MessageComposer({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1">
           {/* File upload */}
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="rounded p-1.5 text-tertiary hover:bg-surface-3 hover:text-primary"
-            title="Attach file"
-          >
-            <Paperclip className="h-4 w-4" />
-          </button>
+          <Tooltip tooltipHeading="Attach files" tooltipContent="Upload images or files to this message">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="rounded-lg p-2 text-tertiary transition-colors hover:bg-surface-3 hover:text-primary"
+            >
+              <Paperclip className="h-4 w-4" />
+            </button>
+          </Tooltip>
           <input
             ref={fileInputRef}
             type="file"
@@ -262,16 +332,17 @@ export const MessageComposer = observer(function MessageComposer({
 
           {/* Emoji picker */}
           <div className="relative">
-            <button
-              type="button"
-              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-              className="rounded p-1.5 text-tertiary hover:bg-surface-3 hover:text-primary text-16"
-              title="Add emoji"
-            >
-              😊
-            </button>
+            <Tooltip tooltipHeading="Insert emoji" tooltipContent="Add an emoji to your draft">
+              <button
+                type="button"
+                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                className="rounded-lg p-2 text-16 text-tertiary transition-colors hover:bg-surface-3 hover:text-primary"
+              >
+                😊
+              </button>
+            </Tooltip>
             {showEmojiPicker && (
-              <div className="absolute bottom-full left-0 mb-1 flex flex-wrap gap-1 rounded-md border border-subtle bg-surface-1 p-2 shadow-md">
+              <div className="absolute bottom-full left-0 mb-2 flex flex-wrap gap-1 rounded-xl border border-subtle bg-surface-1 p-2 shadow-lg">
                 {QUICK_EMOJIS.map((emoji) => (
                   <button
                     key={emoji}
@@ -293,11 +364,11 @@ export const MessageComposer = observer(function MessageComposer({
 
         <button
           type="button"
-          disabled={isSubmitting || (!value.trim() && !pendingAttachments.length)}
-          className="rounded bg-accent-primary px-3 py-1.5 text-12 font-medium text-white disabled:opacity-50"
+          disabled={isSubmitting || uploadingCount > 0 || (!value.trim() && !pendingAttachments.length)}
+          className="rounded-xl bg-accent-primary px-4 py-2 text-13 font-medium text-white transition-all duration-200 disabled:opacity-50"
           onClick={() => void handleSubmit()}
         >
-          {isSubmitting ? "Sending…" : "Send"}
+          {uploadingCount > 0 ? `Uploading ${uploadingCount}…` : isSubmitting ? "Sending…" : "Send"}
         </button>
       </div>
     </div>

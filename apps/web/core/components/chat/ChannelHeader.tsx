@@ -4,11 +4,12 @@
  * See the LICENSE file for details.
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { observer } from "mobx-react";
-import { Settings, UserPlus, Users } from "lucide-react";
+import { Search, Settings, UserPlus, Users } from "lucide-react";
+import { Tooltip } from "@plane/propel/tooltip";
 import { EChannelType } from "@plane/types";
-import { useChannel, useChannelPermissions } from "@/hooks/store/use-chat";
+import { useChat, useChannel, useChannelPermissions } from "@/hooks/store/use-chat";
 import { ChannelMembersList } from "./ChannelMembersList";
 import { ChannelSettingsModal } from "./ChannelSettingsModal";
 import { InviteToChannelModal } from "./InviteToChannelModal";
@@ -22,11 +23,16 @@ export const ChannelHeader = observer(function ChannelHeader({
   workspaceSlug: string;
 }) {
   const channel = useChannel(channelId);
+  const chat = useChat();
   const permissions = useChannelPermissions(channelId);
   const [showMembers, setShowMembers] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
+
+  useEffect(() => {
+    void chat.channel.fetchPermissions(workspaceSlug, channelId);
+  }, [channelId, chat, workspaceSlug]);
 
   if (!channel) return null;
 
@@ -36,43 +42,54 @@ export const ChannelHeader = observer(function ChannelHeader({
 
   return (
     <>
-      <div className="flex items-center justify-between border-b border-subtle px-4 py-3">
+      <div className="flex items-center justify-between border-b border-subtle bg-surface-1/90 px-5 py-4 backdrop-blur-sm">
         <div className="min-w-0">
-          <div className="text-13 font-semibold text-primary truncate">
+          <div className="truncate text-[16px] font-semibold text-primary">
             {isDm ? channel.name : `# ${channel.name}`}
           </div>
           {channel.description && (
-            <div className="text-12 text-secondary truncate">{channel.description}</div>
+            <div className="truncate pt-0.5 text-13 text-secondary">{channel.description}</div>
           )}
         </div>
-        <div className="flex items-center gap-1 flex-shrink-0">
+        <div className="flex flex-shrink-0 items-center gap-1.5">
           <button
             type="button"
             onClick={() => setShowMembers(!showMembers)}
-            className="flex items-center gap-1.5 rounded px-2 py-1 text-12 text-secondary hover:bg-surface-3 hover:text-primary"
+            className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-13 text-secondary transition-colors hover:bg-surface-3 hover:text-primary"
           >
             <Users className="h-3.5 w-3.5" />
             <span>{channel.member_count}</span>
           </button>
-          {isPrivate && (
+          <Tooltip tooltipHeading="Search messages" tooltipContent="Find messages in this channel">
             <button
               type="button"
-              onClick={() => setShowInvite(true)}
-              className="rounded p-1.5 text-tertiary hover:bg-surface-3 hover:text-primary"
-              title="Invite members"
+              onClick={() => setShowSearch((prev) => !prev)}
+              className="rounded-xl p-2 text-tertiary transition-colors hover:bg-surface-3 hover:text-primary"
             >
-              <UserPlus className="h-4 w-4" />
+              <Search className="h-4 w-4" />
             </button>
+          </Tooltip>
+          {isPrivate && (
+            <Tooltip tooltipHeading="Invite to channel" tooltipContent="Add more people to this private channel">
+              <button
+                type="button"
+                onClick={() => setShowInvite(true)}
+                className="rounded-xl p-2 text-tertiary transition-colors hover:bg-surface-3 hover:text-primary"
+              >
+                <UserPlus className="h-4 w-4" />
+              </button>
+            </Tooltip>
           )}
           {canManage && (
-            <button
-              type="button"
-              onClick={() => setShowSettings(true)}
-              className="rounded p-1.5 text-tertiary hover:bg-surface-3 hover:text-primary"
-              title="Channel settings"
-            >
-              <Settings className="h-4 w-4" />
-            </button>
+            <Tooltip tooltipHeading="Channel settings" tooltipContent="Manage members, permissions, and details">
+              <button
+                type="button"
+                onClick={() => setShowSettings(true)}
+                className="rounded-xl p-2 text-tertiary transition-colors hover:bg-surface-3 hover:text-primary"
+              >
+                <Settings className="h-4 w-4" />
+              </button>
+            </Tooltip>
           )}
         </div>
       </div>

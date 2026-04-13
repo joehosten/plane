@@ -17,6 +17,7 @@ export interface IChannelStore {
   workspaceSlug: string | null;
   fetchWorkspaceChannels: (workspaceSlug: string) => Promise<TChannel[]>;
   fetchProjectChannels: (workspaceSlug: string, projectId: string) => Promise<TChannel[]>;
+  fetchChannel: (workspaceSlug: string, channelId: string) => Promise<TChannel>;
   createChannel: (workspaceSlug: string, data: Partial<TChannel> & { member_ids?: string[] }) => Promise<TChannel>;
   updateChannel: (workspaceSlug: string, channelId: string, data: Partial<TChannel>) => Promise<TChannel>;
   archiveChannel: (workspaceSlug: string, channelId: string) => Promise<void>;
@@ -29,6 +30,7 @@ export interface IChannelStore {
     channelId: string,
     data: Partial<TChannelPermissions>
   ) => Promise<TChannelPermissions>;
+  myPermissionsFor: (channelId: string) => TChannelPermissions | undefined;
   getPermissions: (channelId: string) => TChannelPermissions | undefined;
   fetchMembers: (workspaceSlug: string, channelId: string) => Promise<TChannelMembership[]>;
   addMember: (
@@ -65,6 +67,7 @@ export class ChannelStore implements IChannelStore {
       projectChannels: computed,
       fetchWorkspaceChannels: action,
       fetchProjectChannels: action,
+      fetchChannel: action,
       createChannel: action,
       updateChannel: action,
       archiveChannel: action,
@@ -103,6 +106,8 @@ export class ChannelStore implements IChannelStore {
 
   getPermissions = computedFn((channelId: string) => this.channelPermissions.get(channelId));
 
+  myPermissionsFor = computedFn((channelId: string) => this.channelPermissions.get(channelId));
+
   getMembers = computedFn((channelId: string) => this.memberships.get(channelId) ?? []);
 
   setChannels = (channels: TChannel[]) => {
@@ -125,6 +130,13 @@ export class ChannelStore implements IChannelStore {
     this.workspaceSlug = workspaceSlug;
     this.setChannels(channels);
     return channels;
+  };
+
+  fetchChannel = async (workspaceSlug: string, channelId: string) => {
+    const channel = await this.service.retrieve(workspaceSlug, channelId);
+    this.workspaceSlug = workspaceSlug;
+    this.upsertChannel(channel);
+    return channel;
   };
 
   createChannel = async (workspaceSlug: string, data: Partial<TChannel> & { member_ids?: string[] }) => {

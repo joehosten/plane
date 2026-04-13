@@ -32,13 +32,13 @@ export const MessageThread = observer(function MessageThread({
   }, [channelId, chat, parentMessageId, workspaceSlug]);
 
   return (
-    <aside className="flex h-full w-96 flex-shrink-0 flex-col border-l border-subtle bg-surface-2">
+    <aside className="flex h-full w-[26rem] flex-shrink-0 flex-col border-l border-subtle bg-surface-2/95 backdrop-blur-sm">
       {/* Thread header */}
-      <div className="flex items-center justify-between border-b border-subtle px-4 py-3">
+      <div className="flex items-center justify-between border-b border-subtle px-5 py-4">
         <div>
-          <div className="text-13 font-semibold text-primary">Thread</div>
+          <div className="text-[15px] font-semibold text-primary">Thread</div>
           {thread.length > 0 && (
-            <div className="text-11 text-tertiary">{thread.length} {thread.length === 1 ? "reply" : "replies"}</div>
+            <div className="text-12 text-tertiary">{thread.length} {thread.length === 1 ? "reply" : "replies"}</div>
           )}
         </div>
         {onClose && (
