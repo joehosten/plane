@@ -41,6 +41,7 @@
   "pnpm": {
     "overrides": {
       "express": "catalog:",
+      "remark-rehype@10.1.0>mdast-util-to-hast": "12.3.0",
       "mdast-util-to-hast": "13.2.1",
       "valibot": "1.2.0",
       "glob": "11.1.0",
