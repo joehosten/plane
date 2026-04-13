@@ -245,7 +245,7 @@ export const MessageComposer = observer(function MessageComposer({
         attachment_payloads: pendingAttachments.flatMap((attachment) =>
           attachment.uploaded ? [attachment.uploaded] : []
         ),
-        ...(replyingTo && !parentId ? { reply_to_id: replyingTo.id } : {}),
+        ...(replyingTo && !parentId ? { reply_to: replyingTo.id } : {}),
       };
 
       if (parentId) {

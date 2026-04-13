@@ -16,9 +16,11 @@ const MENTION_CLASS_NAME =
 const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 function getMentionLabels(message: TMessage): string[] {
-  const labels = [...message.content_html.matchAll(/<mention-component[^>]*id="([^"]+)"[^>]*>/g)].map(
-    (match) => `@${match[1]}`
-  );
+  const document = new DOMParser().parseFromString(message.content_html ?? "", "text/html");
+  const labels = [...document.querySelectorAll("mention-component[id]")].flatMap((element) => {
+    const id = element.getAttribute("id");
+    return id ? [`@${id}`] : [];
+  });
 
   if (/@everyone\b/i.test(message.content ?? "")) {
     labels.push("@everyone");

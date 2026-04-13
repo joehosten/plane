@@ -170,7 +170,7 @@ export class MessageStore implements IMessageStore {
     const existing = this.channelMessages.get(channelId) ?? [];
     const messageIndex = existing.findIndex((message) => message.id === messageId);
     if (messageIndex === -1) return;
-    const updatedMessage = Object.assign({}, existing[messageIndex], { deleted_at: new Date().toISOString() });
+    const updatedMessage = { ...existing[messageIndex], deleted_at: new Date().toISOString() };
     this.channelMessages.set(channelId, existing.with(messageIndex, updatedMessage));
   };
 
