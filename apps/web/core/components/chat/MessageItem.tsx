@@ -9,7 +9,7 @@ import { observer } from "mobx-react";
 import { formatDistanceToNow, format } from "date-fns";
 import { MessageSquare, Pencil, Plus, Reply, Trash2 } from "lucide-react";
 import { Avatar } from "@plane/ui";
-import { getFileURL } from "@plane/utils";
+import { escapeHtml, getFileURL } from "@plane/utils";
 import type { TMessage } from "@plane/types";
 import { useChat } from "@/hooks/store/use-chat";
 import { useUser } from "@/hooks/store/user";
@@ -106,7 +106,7 @@ export const MessageItem = observer(function MessageItem({
     try {
       await chat.message.editMessage(workspaceSlug, channelId, message.id, {
         content: trimmed,
-        content_html: `<p>${trimmed.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")}</p>`,
+        content_html: `<p>${escapeHtml(trimmed)}</p>`,
       });
     } finally {
       setIsSubmittingEdit(false);

@@ -25,6 +25,7 @@ export interface IReactionStore {
 }
 
 export class ReactionStore implements IReactionStore {
+  /** Map from messageId → Set of emoji strings that the current user has reacted with. */
   myReactions = new Map<string, Set<string>>();
   private currentUserId: string | null = null;
   private readonly service = new ReactionService();

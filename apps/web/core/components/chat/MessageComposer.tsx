@@ -8,21 +8,13 @@ import { useEffect, useRef, useState } from "react";
 import { observer } from "mobx-react";
 import { Paperclip, X } from "lucide-react";
 import { Avatar } from "@plane/ui";
-import { getFileURL } from "@plane/utils";
+import { escapeHtml, getFileURL } from "@plane/utils";
 import type { IUserLite } from "@plane/types";
 import { useChat } from "@/hooks/store/use-chat";
 import { useMember } from "@/hooks/store/use-member";
 import { useChannelPermissions } from "@/hooks/store/use-chat";
 
 const QUICK_EMOJIS = ["😀", "😂", "❤️", "👍", "🎉", "🔥", "✅", "😎", "🤔", "😮"];
-
-const escapeHtml = (value: string) =>
-  value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
 
 type TPendingAttachment = {
   id: string;

@@ -431,3 +431,16 @@ export const joinUrlPath = (...segments: string[]): string => {
     return pathParts.length > 0 ? `/${pathParts.join("/")}` : "";
   }
 };
+
+/**
+ * @description Escapes special HTML characters to prevent XSS vulnerabilities
+ * @param {string} value - Raw string to escape
+ * @returns {string} HTML-safe string
+ */
+export const escapeHtml = (value: string): string =>
+  value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");

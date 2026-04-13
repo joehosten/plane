@@ -13,6 +13,7 @@ import { useChat, useMessages } from "@/hooks/store/use-chat";
 import { useMember } from "@/hooks/store/use-member";
 import { MessageItem } from "./MessageItem";
 
+/** Messages from the same sender within this window are grouped (compact mode: no avatar/name repeated). */
 const MESSAGE_GROUP_THRESHOLD_MS = 5 * 60 * 1000;
 
 function DateSeparator({ date }: { date: Date }) {

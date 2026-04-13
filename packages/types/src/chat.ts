@@ -74,6 +74,7 @@ export type TMessage = {
   } | null;
   reactions: TMessageReactionSummary[];
   attachments: TMessageAttachment[];
+  /** Array of workspace user IDs mentioned in this message (e.g. used to trigger mention toasts). */
   mentions: string[];
   reply_to_detail?: Pick<TMessage, "id" | "content" | "sender_detail"> | null;
   edited_at: string | null;
