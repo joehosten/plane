@@ -42,6 +42,7 @@ export interface IMessageStore {
     data: Partial<TMessage> & { attachment_payloads?: TMessageAttachment[] }
   ) => Promise<TMessage>;
   getMessages: (channelId: string) => TMessage[];
+  searchMessages: (workspaceSlug: string, query: string) => Promise<TMessage[]>;
   upsertMessage: (message: TMessage) => void;
   removeMessage: (channelId: string, messageId: string) => void;
   setReplyingTo: (message: TMessage | null) => void;
@@ -81,6 +82,10 @@ export class MessageStore implements IMessageStore {
   }
 
   getMessages = computedFn((channelId: string) => this.channelMessages.get(channelId) ?? []);
+
+  searchMessages = async (workspaceSlug: string, query: string): Promise<TMessage[]> => {
+    return this.service.search(workspaceSlug, query);
+  };
 
   setReplyingTo = (message: TMessage | null) => {
     this.replyingTo = message;

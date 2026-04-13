@@ -20,7 +20,9 @@ export interface IChannelStore {
   createChannel: (workspaceSlug: string, data: Partial<TChannel> & { member_ids?: string[] }) => Promise<TChannel>;
   updateChannel: (workspaceSlug: string, channelId: string, data: Partial<TChannel>) => Promise<TChannel>;
   archiveChannel: (workspaceSlug: string, channelId: string) => Promise<void>;
+  lookupOrCreateDM: (workspaceSlug: string, memberIds: string[]) => Promise<TChannel>;
   getChannel: (channelId: string) => TChannel | undefined;
+  upsertChannel: (channel: TChannel) => void;
   fetchPermissions: (workspaceSlug: string, channelId: string) => Promise<TChannelPermissions>;
   updatePermissions: (
     workspaceSlug: string,
@@ -66,6 +68,7 @@ export class ChannelStore implements IChannelStore {
       createChannel: action,
       updateChannel: action,
       archiveChannel: action,
+      lookupOrCreateDM: action,
       fetchPermissions: action,
       updatePermissions: action,
       fetchMembers: action,
@@ -140,6 +143,12 @@ export class ChannelStore implements IChannelStore {
     await this.service.archive(workspaceSlug, channelId);
     const channel = this.channels.get(channelId);
     if (channel) this.channels.set(channelId, { ...channel, is_archived: true });
+  };
+
+  lookupOrCreateDM = async (workspaceSlug: string, memberIds: string[]) => {
+    const channel = await this.service.lookupOrCreateDM(workspaceSlug, memberIds);
+    this.upsertChannel(channel);
+    return channel;
   };
 
   fetchPermissions = async (workspaceSlug: string, channelId: string) => {
