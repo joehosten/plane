@@ -18,6 +18,7 @@ import { useWorkspace } from "@/hooks/store/use-workspace";
 import { useUserPermissions } from "@/hooks/store/user";
 // local imports
 import { ChannelsWorkspaceSettingsHeader } from "./header";
+import { WorkspaceChatSettings } from "@/components/chat/WorkspaceChatSettings";
 
 function ChannelsSettingsPage() {
   // store hooks
@@ -50,7 +51,10 @@ function ChannelsSettingsPage() {
           title={t("workspace_settings.settings.channels.heading")}
           description={t("workspace_settings.settings.channels.description")}
         />
-        <p className="text-sm text-secondary">Channel administration settings coming soon.</p>
+        <WorkspaceChatSettings
+          workspaceSlug={currentWorkspace?.slug ?? ""}
+          isAdmin={allowPermissions([EUserPermissions.ADMIN], EUserPermissionsLevel.WORKSPACE)}
+        />
       </div>
     </SettingsContentWrapper>
   );

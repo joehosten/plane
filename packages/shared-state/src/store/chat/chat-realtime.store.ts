@@ -5,10 +5,11 @@
  */
 
 import { action, makeObservable, observable } from "mobx";
-import { setToast, TOAST_TYPE } from "@plane/propel/toast";
 import { ChatWebSocketService } from "@plane/services";
 import type { TChatWebSocketEvent, TUserPresence } from "@plane/types";
 import type { IChatRootStore } from "./index";
+
+export type TToastCallback = (params: { title: string; message: string }) => void;
 
 export interface IChatRealtimeStore {
   typingIndicators: Map<string, Set<string>>;
@@ -18,11 +19,13 @@ export interface IChatRealtimeStore {
   sendTypingStart: (channelId: string, userId: string) => void;
   sendTypingStop: (channelId: string, userId: string) => void;
   setCurrentUserId: (userId: string) => void;
+  setToastCallback: (callback: TToastCallback) => void;
 }
 
 export class ChatRealtimeStore implements IChatRealtimeStore {
   typingIndicators = new Map<string, Set<string>>();
   private currentUserId: string | null = null;
+  private toastCallback: TToastCallback | null = null;
   private readonly service = new ChatWebSocketService();
   private heartbeatId: number | null = null;
 
@@ -40,6 +43,10 @@ export class ChatRealtimeStore implements IChatRealtimeStore {
   setCurrentUserId = (userId: string) => {
     this.currentUserId = userId;
     this.rootStore.reaction.setCurrentUserId(userId);
+  };
+
+  setToastCallback = (callback: TToastCallback) => {
+    this.toastCallback = callback;
   };
 
   connect = (params: { channelId: string; workspaceSlug: string; userId?: string; projectId?: string }) => {
@@ -84,8 +91,7 @@ export class ChatRealtimeStore implements IChatRealtimeStore {
           const senderName = msg.sender_detail?.display_name ?? "Someone";
           const channelInfo = this.rootStore.channel.getChannel(msg.channel);
           const channelName = channelInfo ? `#${channelInfo.name}` : "a channel";
-          setToast({
-            type: TOAST_TYPE.INFO,
+          this.toastCallback?.({
             title: "You were mentioned",
             message: `${senderName} mentioned you in ${channelName}`,
           });

@@ -4,8 +4,11 @@
  * See the LICENSE file for details.
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
+import { TOAST_TYPE, setToast } from "@plane/propel/toast";
+import { useChat } from "@/hooks/store/use-chat";
+import { useUser } from "@/hooks/store/user";
 import { ChannelSidebar } from "./ChannelSidebar";
 import { MessageThread } from "./MessageThread";
 
@@ -18,8 +21,19 @@ export function ChatLayout({
   projectId?: string;
   children: ReactNode;
 }) {
+  const chat = useChat();
+  const { data: currentUser } = useUser();
   const [threadMessageId, setThreadMessageId] = useState<string | null>(null);
   const [threadChannelId, setThreadChannelId] = useState<string | null>(null);
+
+  // Register current user ID and toast callback with realtime store
+  useEffect(() => {
+    if (!currentUser?.id) return;
+    chat.realtime.setCurrentUserId(currentUser.id);
+    chat.realtime.setToastCallback(({ title, message }) => {
+      setToast({ type: TOAST_TYPE.INFO, title, message });
+    });
+  }, [chat, currentUser?.id]);
 
   const openThread = (channelId: string, messageId: string) => {
     setThreadChannelId(channelId);
