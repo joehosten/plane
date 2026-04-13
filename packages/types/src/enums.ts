@@ -72,6 +72,7 @@ export enum EFileAssetType {
   INITIATIVE_DESCRIPTION = "INITIATIVE_DESCRIPTION",
   PROJECT_DESCRIPTION = "PROJECT_DESCRIPTION",
   TEAM_SPACE_COMMENT_DESCRIPTION = "TEAM_SPACE_COMMENT_DESCRIPTION",
+  CHAT_MESSAGE_ATTACHMENT = "CHAT_MESSAGE_ATTACHMENT",
 }
 
 export type TEditorAssetType =
@@ -84,6 +85,27 @@ export type TEditorAssetType =
   | EFileAssetType.PROJECT_DESCRIPTION
   | EFileAssetType.TEAM_SPACE_COMMENT_DESCRIPTION;
 
+export enum EChannelType {
+  WORKSPACE_PUBLIC = "WORKSPACE_PUBLIC",
+  WORKSPACE_PRIVATE = "WORKSPACE_PRIVATE",
+  PROJECT = "PROJECT",
+  DM = "DM",
+  GROUP_DM = "GROUP_DM",
+}
+
+export enum EChannelRole {
+  OWNER = 100,
+  ADMIN = 80,
+  MEMBER = 50,
+  READONLY = 10,
+}
+
+export enum EUserPresenceStatus {
+  ONLINE = "ONLINE",
+  AWAY = "AWAY",
+  DND = "DND",
+  OFFLINE = "OFFLINE",
+}
 export enum EUpdateStatus {
   OFF_TRACK = "OFF-TRACK",
   ON_TRACK = "ON-TRACK",

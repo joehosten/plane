@@ -106,6 +106,8 @@ class UserNotificationPreference(BaseModel):
     comment = models.BooleanField(default=True)
     mention = models.BooleanField(default=True)
     issue_completed = models.BooleanField(default=True)
+    chat_mention = models.BooleanField(default=True)
+    dm_received = models.BooleanField(default=True)
 
     class Meta:
         verbose_name = "UserNotificationPreference"

@@ -82,6 +82,21 @@ export const coreRoutes: RouteConfigEntry[] = [
           route(":workspaceSlug/drafts", "./(all)/[workspaceSlug]/(projects)/drafts/page.tsx"),
         ]),
 
+        // Messaging
+        layout("./(all)/[workspaceSlug]/(messaging)/layout.tsx", [
+          route(":workspaceSlug/messaging", "./(all)/[workspaceSlug]/(messaging)/page.tsx"),
+          layout("./(all)/[workspaceSlug]/(messaging)/channels/[channelId]/layout.tsx", [
+            route(
+              ":workspaceSlug/messaging/channels/:channelId",
+              "./(all)/[workspaceSlug]/(messaging)/channels/[channelId]/page.tsx"
+            ),
+          ]),
+          route(
+            ":workspaceSlug/messaging/dms/:channelId",
+            "./(all)/[workspaceSlug]/(messaging)/dms/[channelId]/page.tsx"
+          ),
+        ]),
+
         // Notifications
         layout("./(all)/[workspaceSlug]/(projects)/notifications/layout.tsx", [
           route(":workspaceSlug/notifications", "./(all)/[workspaceSlug]/(projects)/notifications/page.tsx"),
@@ -209,6 +224,18 @@ export const coreRoutes: RouteConfigEntry[] = [
               "./(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/pages/(list)/page.tsx"
             ),
           ]),
+          // Project Chat
+          layout("./(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/chat/layout.tsx", [
+            route(
+              ":workspaceSlug/projects/:projectId/chat",
+              "./(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/chat/page.tsx"
+            ),
+            route(
+              ":workspaceSlug/projects/:projectId/chat/:channelId",
+              "./(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/chat/[channelId]/page.tsx"
+            ),
+          ]),
+
           // Intake list
           layout("./(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/intake/layout.tsx", [
             route(
@@ -281,6 +308,10 @@ export const coreRoutes: RouteConfigEntry[] = [
           route(
             ":workspaceSlug/settings/webhooks/:webhookId",
             "./(all)/[workspaceSlug]/(settings)/settings/(workspace)/webhooks/[webhookId]/page.tsx"
+          ),
+          route(
+            ":workspaceSlug/settings/channels",
+            "./(all)/[workspaceSlug]/(settings)/settings/(workspace)/channels/page.tsx"
           ),
         ]),
 

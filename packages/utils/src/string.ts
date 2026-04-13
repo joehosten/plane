@@ -130,6 +130,16 @@ export const sanitizeHTML = (htmlString: string) => {
   return sanitizedText.trim(); // trim the string to remove leading and trailing whitespaces
 };
 
+export const sanitizeRichHTML = (htmlString: string) =>
+  sanitizeHtml(htmlString, {
+    allowedTags: ["p", "br", "strong", "em", "u", "s", "code", "pre", "blockquote", "ul", "ol", "li", "a", "span"],
+    allowedAttributes: {
+      a: ["href", "target", "rel"],
+      span: ["class"],
+    },
+    allowedSchemes: ["http", "https", "mailto"],
+  });
+
 /**
  * @description: This function will remove all the HTML tags from the string and truncate the string to the specified length
  * @param {string} html
@@ -431,3 +441,26 @@ export const joinUrlPath = (...segments: string[]): string => {
     return pathParts.length > 0 ? `/${pathParts.join("/")}` : "";
   }
 };
+
+/**
+ * @description Escapes special HTML characters to prevent XSS vulnerabilities
+ * @param {string} value - Raw string to escape
+ * @returns {string} HTML-safe string
+ */
+export const escapeHtml = (value: string): string =>
+  value.replace(/[&<>"']/g, (char) => {
+    switch (char) {
+      case "&":
+        return "&amp;";
+      case "<":
+        return "&lt;";
+      case ">":
+        return "&gt;";
+      case '"':
+        return "&quot;";
+      case "'":
+        return "&#39;";
+      default:
+        return char;
+    }
+  });

@@ -16,6 +16,7 @@ import {
   ViewsIcon,
   YourWorkIcon,
 } from "@plane/propel/icons";
+import { MessageSquareText } from "lucide-react";
 import { cn } from "@plane/utils";
 
 export const getSidebarNavigationItemIcon = (key: string, className: string = "") => {
@@ -24,6 +25,8 @@ export const getSidebarNavigationItemIcon = (key: string, className: string = ""
       return <HomeIcon className={cn("size-4 flex-shrink-0", className)} />;
     case "inbox":
       return <InboxIcon className={cn("size-4 flex-shrink-0", className)} />;
+    case "messaging":
+      return <MessageSquareText className={cn("size-4 flex-shrink-0", className)} />;
     case "projects":
       return <ProjectIcon className={cn("size-4 flex-shrink-0", className)} />;
     case "views":

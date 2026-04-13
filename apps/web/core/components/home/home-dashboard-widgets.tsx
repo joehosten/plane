@@ -25,6 +25,7 @@ import { StickiesWidget } from "../stickies/widget";
 import { HomeLoader, NoProjectsEmptyState, RecentActivityWidget } from "./widgets";
 import { DashboardQuickLinks } from "./widgets/links";
 import { ManageWidgetsModal } from "./widgets/manage";
+import { ChatUnreadWidget } from "./widgets/chat-unread";
 
 export const HOME_WIDGETS_LIST: {
   [key in THomeWidgetKeys]: {
@@ -57,6 +58,11 @@ export const HOME_WIDGETS_LIST: {
     component: null,
     fullWidth: false,
     title: "home.quick_tutorial.title",
+  },
+  chat_unread: {
+    component: ChatUnreadWidget,
+    fullWidth: false,
+    title: "home.chat_unread.title",
   },
 };
 

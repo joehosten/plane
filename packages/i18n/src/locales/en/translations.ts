@@ -1522,6 +1522,11 @@ export default {
           },
         },
       },
+      channels: {
+        title: "Channels",
+        heading: "Channels",
+        description: "Manage workspace channels and their settings.",
+      },
       webhooks: {
         heading: "Webhooks",
         description: "Automate notifications to external services when project events occur.",
@@ -2257,6 +2262,10 @@ export default {
         title: "Add labels to work items to see the breakdown of work by labels.",
       },
     },
+  },
+  chat: {
+    page_label: "Messaging",
+    select_channel: "Select a channel to start messaging.",
   },
   disabled_project: {
     empty_state: {
