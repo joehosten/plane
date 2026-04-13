@@ -5,12 +5,13 @@
  */
 
 import type { TPaginationInfo } from "./common";
-import type { EChannelType, EUserPresenceStatus } from "./enums";
+import type { EChannelRole, EChannelType, EUserPresenceStatus } from "./enums";
 import type { IUserLite } from "./users";
 
 export type TMessageReactionSummary = {
   reaction: string;
   count: number;
+  my_reaction?: boolean;
 };
 
 export type TMessageAttachment = {
@@ -44,8 +45,14 @@ export type TChannelMembership = {
   channel: string;
   member: string;
   member_detail?: IUserLite;
-  role: number;
+  role: EChannelRole;
   joined_at: string;
+};
+
+export type TChannelPermissions = {
+  can_post: boolean;
+  can_create_channels: boolean;
+  can_manage_members: boolean;
 };
 
 export type TMessage = {
@@ -67,6 +74,8 @@ export type TMessage = {
   } | null;
   reactions: TMessageReactionSummary[];
   attachments: TMessageAttachment[];
+  mentions: string[];
+  reply_to_detail?: Pick<TMessage, "id" | "content" | "sender_detail"> | null;
   edited_at: string | null;
   deleted_at: string | null;
   created_at: string;

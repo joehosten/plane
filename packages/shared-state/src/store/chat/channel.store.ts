@@ -6,12 +6,14 @@
 
 import { action, computed, makeObservable, observable } from "mobx";
 import { computedFn } from "mobx-utils";
-import type { TChannel } from "@plane/types";
+import type { TChannel, TChannelMembership, TChannelPermissions } from "@plane/types";
 import { EChannelType } from "@plane/types";
 import { ChannelService } from "@plane/services";
 
 export interface IChannelStore {
   channels: Map<string, TChannel>;
+  channelPermissions: Map<string, TChannelPermissions>;
+  memberships: Map<string, TChannelMembership[]>;
   workspaceSlug: string | null;
   fetchWorkspaceChannels: (workspaceSlug: string) => Promise<TChannel[]>;
   fetchProjectChannels: (workspaceSlug: string, projectId: string) => Promise<TChannel[]>;
@@ -19,6 +21,21 @@ export interface IChannelStore {
   updateChannel: (workspaceSlug: string, channelId: string, data: Partial<TChannel>) => Promise<TChannel>;
   archiveChannel: (workspaceSlug: string, channelId: string) => Promise<void>;
   getChannel: (channelId: string) => TChannel | undefined;
+  fetchPermissions: (workspaceSlug: string, channelId: string) => Promise<TChannelPermissions>;
+  updatePermissions: (
+    workspaceSlug: string,
+    channelId: string,
+    data: Partial<TChannelPermissions>
+  ) => Promise<TChannelPermissions>;
+  getPermissions: (channelId: string) => TChannelPermissions | undefined;
+  fetchMembers: (workspaceSlug: string, channelId: string) => Promise<TChannelMembership[]>;
+  addMember: (
+    workspaceSlug: string,
+    channelId: string,
+    data: Partial<TChannelMembership>
+  ) => Promise<TChannelMembership>;
+  removeMember: (workspaceSlug: string, channelId: string, memberId: string) => Promise<void>;
+  getMembers: (channelId: string) => TChannelMembership[];
   workspacePublicChannels: TChannel[];
   workspacePrivateChannels: TChannel[];
   dmChannels: TChannel[];
@@ -28,12 +45,16 @@ export interface IChannelStore {
 
 export class ChannelStore implements IChannelStore {
   channels = new Map<string, TChannel>();
+  channelPermissions = new Map<string, TChannelPermissions>();
+  memberships = new Map<string, TChannelMembership[]>();
   workspaceSlug: string | null = null;
   private readonly service = new ChannelService();
 
   constructor() {
     makeObservable(this, {
       channels: observable,
+      channelPermissions: observable,
+      memberships: observable,
       workspaceSlug: observable.ref,
       workspacePublicChannels: computed,
       workspacePrivateChannels: computed,
@@ -45,6 +66,11 @@ export class ChannelStore implements IChannelStore {
       createChannel: action,
       updateChannel: action,
       archiveChannel: action,
+      fetchPermissions: action,
+      updatePermissions: action,
+      fetchMembers: action,
+      addMember: action,
+      removeMember: action,
       setChannels: action,
       upsertChannel: action,
     });
@@ -71,6 +97,10 @@ export class ChannelStore implements IChannelStore {
   }
 
   getChannel = computedFn((channelId: string) => this.channels.get(channelId));
+
+  getPermissions = computedFn((channelId: string) => this.channelPermissions.get(channelId));
+
+  getMembers = computedFn((channelId: string) => this.memberships.get(channelId) ?? []);
 
   setChannels = (channels: TChannel[]) => {
     channels.forEach((channel) => this.channels.set(channel.id, channel));
@@ -110,5 +140,43 @@ export class ChannelStore implements IChannelStore {
     await this.service.archive(workspaceSlug, channelId);
     const channel = this.channels.get(channelId);
     if (channel) this.channels.set(channelId, { ...channel, is_archived: true });
+  };
+
+  fetchPermissions = async (workspaceSlug: string, channelId: string) => {
+    const permissions = await this.service.getPermissions(workspaceSlug, channelId);
+    this.channelPermissions.set(channelId, permissions);
+    return permissions;
+  };
+
+  updatePermissions = async (workspaceSlug: string, channelId: string, data: Partial<TChannelPermissions>) => {
+    const permissions = await this.service.updatePermissions(workspaceSlug, channelId, data);
+    this.channelPermissions.set(channelId, permissions);
+    return permissions;
+  };
+
+  fetchMembers = async (workspaceSlug: string, channelId: string) => {
+    const members = await this.service.listMembers(workspaceSlug, channelId);
+    this.memberships.set(channelId, members);
+    return members;
+  };
+
+  addMember = async (workspaceSlug: string, channelId: string, data: Partial<TChannelMembership>) => {
+    const member = await this.service.addMember(workspaceSlug, channelId, data);
+    const existing = this.memberships.get(channelId) ?? [];
+    this.memberships.set(channelId, [...existing, member]);
+    const channel = this.channels.get(channelId);
+    if (channel) this.channels.set(channelId, { ...channel, member_count: channel.member_count + 1 });
+    return member;
+  };
+
+  removeMember = async (workspaceSlug: string, channelId: string, memberId: string) => {
+    await this.service.removeMember(workspaceSlug, channelId, memberId);
+    const existing = this.memberships.get(channelId) ?? [];
+    this.memberships.set(
+      channelId,
+      existing.filter((m) => m.id !== memberId)
+    );
+    const channel = this.channels.get(channelId);
+    if (channel) this.channels.set(channelId, { ...channel, member_count: Math.max(0, channel.member_count - 1) });
   };
 }

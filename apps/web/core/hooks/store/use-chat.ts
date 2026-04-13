@@ -32,3 +32,13 @@ export const usePresence = (_workspaceSlug: string): TUserPresence[] => {
   const chat = useChat();
   return [...chat.presence.workspacePresence.values()];
 };
+
+export const useChannelMembers = (channelId: string) => {
+  const chat = useChat();
+  return chat.channel.getMembers(channelId);
+};
+
+export const useChannelPermissions = (channelId: string) => {
+  const chat = useChat();
+  return chat.channel.getPermissions(channelId);
+};

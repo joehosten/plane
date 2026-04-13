@@ -19,6 +19,8 @@ export interface IMessageStore {
   channelMessages: Map<string, TMessage[]>;
   threadMessages: Map<string, TMessage[]>;
   messagePagination: Map<string, Omit<TMessagePaginatedResponse, "results">>;
+  replyingTo: TMessage | null;
+  editingMessageId: string | null;
   fetchMessages: (workspaceSlug: string, channelId: string, cursor?: string) => Promise<TMessagePaginatedResponse>;
   sendMessage: (
     workspaceSlug: string,
@@ -42,12 +44,18 @@ export interface IMessageStore {
   getMessages: (channelId: string) => TMessage[];
   upsertMessage: (message: TMessage) => void;
   removeMessage: (channelId: string, messageId: string) => void;
+  setReplyingTo: (message: TMessage | null) => void;
+  clearReplyingTo: () => void;
+  setEditingMessageId: (id: string | null) => void;
+  clearEditingMessageId: () => void;
 }
 
 export class MessageStore implements IMessageStore {
   channelMessages = new Map<string, TMessage[]>();
   threadMessages = new Map<string, TMessage[]>();
   messagePagination = new Map<string, Omit<TMessagePaginatedResponse, "results">>();
+  replyingTo: TMessage | null = null;
+  editingMessageId: string | null = null;
   private readonly service = new MessageService();
 
   constructor() {
@@ -55,6 +63,8 @@ export class MessageStore implements IMessageStore {
       channelMessages: observable,
       threadMessages: observable,
       messagePagination: observable,
+      replyingTo: observable.ref,
+      editingMessageId: observable.ref,
       fetchMessages: action,
       sendMessage: action,
       editMessage: action,
@@ -63,10 +73,30 @@ export class MessageStore implements IMessageStore {
       sendThreadReply: action,
       upsertMessage: action,
       removeMessage: action,
+      setReplyingTo: action,
+      clearReplyingTo: action,
+      setEditingMessageId: action,
+      clearEditingMessageId: action,
     });
   }
 
   getMessages = computedFn((channelId: string) => this.channelMessages.get(channelId) ?? []);
+
+  setReplyingTo = (message: TMessage | null) => {
+    this.replyingTo = message;
+  };
+
+  clearReplyingTo = () => {
+    this.replyingTo = null;
+  };
+
+  setEditingMessageId = (id: string | null) => {
+    this.editingMessageId = id;
+  };
+
+  clearEditingMessageId = () => {
+    this.editingMessageId = null;
+  };
 
   fetchMessages = async (workspaceSlug: string, channelId: string, cursor?: string) => {
     const response = await this.service.list(workspaceSlug, channelId, cursor);

@@ -5,7 +5,7 @@
  */
 
 import { API_BASE_URL } from "@plane/constants";
-import type { TChannel, TChannelMembership, TChannelReadState } from "@plane/types";
+import type { TChannel, TChannelMembership, TChannelPermissions, TChannelReadState } from "@plane/types";
 import { APIService } from "../api.service";
 
 export class ChannelService extends APIService {
@@ -123,6 +123,26 @@ export class ChannelService extends APIService {
 
   async lookupOrCreateDM(workspaceSlug: string, member_ids: string[]): Promise<TChannel> {
     return this.post(`/api/workspaces/${workspaceSlug}/channels/dms/`, { member_ids })
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async getPermissions(workspaceSlug: string, channelId: string): Promise<TChannelPermissions> {
+    return this.get(`/api/workspaces/${workspaceSlug}/channels/${channelId}/permissions/`)
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async updatePermissions(
+    workspaceSlug: string,
+    channelId: string,
+    data: Partial<TChannelPermissions>
+  ): Promise<TChannelPermissions> {
+    return this.patch(`/api/workspaces/${workspaceSlug}/channels/${channelId}/permissions/`, data)
       .then((response) => response?.data)
       .catch((error) => {
         throw error?.response?.data;

@@ -93,6 +93,13 @@ export enum EChannelType {
   GROUP_DM = "GROUP_DM",
 }
 
+export enum EChannelRole {
+  OWNER = 100,
+  ADMIN = 80,
+  MEMBER = 50,
+  READONLY = 10,
+}
+
 export enum EUserPresenceStatus {
   ONLINE = "ONLINE",
   AWAY = "AWAY",

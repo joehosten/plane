@@ -5,6 +5,7 @@
  */
 
 import { action, makeObservable, observable } from "mobx";
+import { setToast, TOAST_TYPE } from "@plane/propel/toast";
 import { ChatWebSocketService } from "@plane/services";
 import type { TChatWebSocketEvent, TUserPresence } from "@plane/types";
 import type { IChatRootStore } from "./index";
@@ -16,10 +17,12 @@ export interface IChatRealtimeStore {
   sendEvent: (event: TChatWebSocketEvent) => void;
   sendTypingStart: (channelId: string, userId: string) => void;
   sendTypingStop: (channelId: string, userId: string) => void;
+  setCurrentUserId: (userId: string) => void;
 }
 
 export class ChatRealtimeStore implements IChatRealtimeStore {
   typingIndicators = new Map<string, Set<string>>();
+  private currentUserId: string | null = null;
   private readonly service = new ChatWebSocketService();
   private heartbeatId: number | null = null;
 
@@ -33,6 +36,11 @@ export class ChatRealtimeStore implements IChatRealtimeStore {
     });
     this.service.on((event) => this.handleEvent(event));
   }
+
+  setCurrentUserId = (userId: string) => {
+    this.currentUserId = userId;
+    this.rootStore.reaction.setCurrentUserId(userId);
+  };
 
   connect = (params: { channelId: string; workspaceSlug: string; userId?: string; projectId?: string }) => {
     this.service.connect(params);
@@ -64,9 +72,28 @@ export class ChatRealtimeStore implements IChatRealtimeStore {
 
   private handleEvent(event: TChatWebSocketEvent) {
     switch (event.type) {
-      case "message.created":
+      case "message.created": {
+        const msg = event.payload as TChatWebSocketEvent<"message.created">["payload"];
+        this.rootStore.message.upsertMessage(msg);
+        if (
+          this.currentUserId &&
+          Array.isArray(msg.mentions) &&
+          msg.mentions.includes(this.currentUserId) &&
+          msg.sender !== this.currentUserId
+        ) {
+          const senderName = msg.sender_detail?.display_name ?? "Someone";
+          const channelInfo = this.rootStore.channel.getChannel(msg.channel);
+          const channelName = channelInfo ? `#${channelInfo.name}` : "a channel";
+          setToast({
+            type: TOAST_TYPE.INFO,
+            title: "You were mentioned",
+            message: `${senderName} mentioned you in ${channelName}`,
+          });
+        }
+        break;
+      }
       case "message.updated":
-        this.rootStore.message.upsertMessage(event.payload as TChatWebSocketEvent<"message.created">["payload"]);
+        this.rootStore.message.upsertMessage(event.payload as TChatWebSocketEvent<"message.updated">["payload"]);
         break;
       case "message.deleted": {
         const payload = event.payload as TChatWebSocketEvent<"message.deleted">["payload"];
