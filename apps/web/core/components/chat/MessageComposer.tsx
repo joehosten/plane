@@ -20,6 +20,8 @@ import { useChannelPermissions } from "@/hooks/store/use-chat";
 
 const QUICK_EMOJIS = ["😀", "😂", "❤️", "👍", "🎉", "🔥", "✅", "😎", "🤔", "😮"];
 
+const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 type TPendingAttachment = {
   id: string;
   file: File;
@@ -174,7 +176,7 @@ export const MessageComposer = observer(function MessageComposer({
       const user = getUserDetails(userId);
       if (user) {
         html = html.replace(
-          new RegExp(`@${escapeHtml(user.display_name)}`, "g"),
+          new RegExp(`@${escapeRegExp(escapeHtml(user.display_name))}`, "g"),
           `<mention data-id="${escapeHtml(userId)}" data-type="user_mention">@${escapeHtml(user.display_name)}</mention>`
         );
       }
